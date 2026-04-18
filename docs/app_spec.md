@@ -38,9 +38,11 @@ El canal inicial será HTTP local, servido desde la propia app:
 
 - Razón: compatible con Android, simple de depurar, no requiere dependencias externas y encaja bien con Flatpak usando `--share=network`.
 - Modelo inicial:
+  - `GET /api/v1/status`
   - `POST /api/v1/poweroff`
   - autenticación mediante token en cabecera `Authorization: Bearer <token>` o equivalente simple
   - respuesta JSON con resultado y causa de error
+  - compatibilidad temporal con rutas heredadas `/v1/status` y `/v1/poweroff`
 
 ### Capa de control de energía
 
@@ -122,6 +124,20 @@ La app debe distinguir claramente entre:
    - devuelve error de autorización
    - devuelve error de bus o sandbox
    - dispara un prompt no deseado
+
+### Contrato HTTP actual
+
+- `GET /api/v1/status`
+  - requiere `Authorization: Bearer <token>`
+  - responde `200` con JSON de estado
+- `POST /api/v1/poweroff`
+  - requiere `Authorization: Bearer <token>`
+  - acepta body vacío o `{}` sin esquema adicional
+  - responde `200` si `login1` acepta la orden
+  - responde `503` si `login1` o polkit rechazan o fallan
+- Compatibilidad temporal:
+  - `GET /v1/status`
+  - `POST /v1/poweroff`
 
 ### Validación de entorno real
 

@@ -25,7 +25,13 @@ from gi.repository import Adw
 from gi.repository import Gtk
 
 from .power import Login1PowerController
-from .remote_control import POWER_OFF_PATH, RemoteCommandServer, STATUS_PATH
+from .remote_control import (
+    LEGACY_POWER_OFF_PATH,
+    LEGACY_STATUS_PATH,
+    POWER_OFF_PATH,
+    RemoteCommandServer,
+    STATUS_PATH,
+)
 from .settings import AppSettings, SettingsSnapshot
 
 @Gtk.Template(resource_path='/dev/neikon/kinetic_sol/window.ui')
@@ -49,7 +55,12 @@ class KineticsolWindow(Adw.ApplicationWindow):
         super().__init__(**kwargs)
         self._settings = AppSettings()
         self._power_controller = Login1PowerController()
-        self._listener = RemoteCommandServer(self._handle_remote_poweroff, self._handle_listener_event)
+        self._power_capability = None
+        self._listener = RemoteCommandServer(
+            self._handle_remote_poweroff,
+            self._handle_remote_status,
+            self._handle_listener_event,
+        )
 
         self.save_button.connect('clicked', self._on_save_clicked)
         self.rotate_token_button.connect('clicked', self._on_rotate_token_clicked)
@@ -115,12 +126,13 @@ class KineticsolWindow(Adw.ApplicationWindow):
             self._show_toast(_('Configuration saved and listener stopped.'))
 
     def _refresh_power_state(self):
-        capability = self._power_controller.check_capability()
-        self.power_state_row.set_subtitle(capability.message)
+        self._power_capability = self._power_controller.check_capability()
+        self.power_state_row.set_subtitle(self._power_capability.message)
 
     def _update_endpoint_row(self, port: int):
         self.endpoint_row.set_subtitle(
-            f'GET {STATUS_PATH} and POST {POWER_OFF_PATH} on port {port}. Bearer token required.'
+            f'GET {STATUS_PATH} and POST {POWER_OFF_PATH} on port {port}. '
+            f'Legacy /v1 compatibility is enabled. Bearer token required.'
         )
 
     def _update_listener_state(self, message: str):
@@ -142,6 +154,25 @@ class KineticsolWindow(Adw.ApplicationWindow):
             'ok': result.success,
             'code': result.code,
             'message': result.message,
+        }
+
+    def _handle_remote_status(self, client_host: str):
+        self._refresh_power_state()
+        snapshot = self._settings.snapshot()
+        self._update_last_request(f'{client_host}: Status request served.')
+        capability = self._power_capability
+        return {
+            'ok': True,
+            'version': self.get_application().version,
+            'listenerEnabled': snapshot.listen_enabled,
+            'listenerRunning': self._listener.is_running,
+            'powerBackend': 'login1',
+            'canonicalStatusPath': STATUS_PATH,
+            'canonicalPowerOffPath': POWER_OFF_PATH,
+            'legacyStatusPath': LEGACY_STATUS_PATH,
+            'legacyPowerOffPath': LEGACY_POWER_OFF_PATH,
+            'canPowerOff': capability.raw_value,
+            'message': capability.message,
         }
 
     def _handle_listener_event(self, event_code: str, message: str):

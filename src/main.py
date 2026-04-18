@@ -32,10 +32,11 @@ from .window import KineticsolWindow
 class KineticsolApplication(Adw.Application):
     """The main application singleton class."""
 
-    def __init__(self):
+    def __init__(self, version: str):
         super().__init__(application_id='dev.neikon.kinetic_sol',
                          flags=Gio.ApplicationFlags.DEFAULT_FLAGS,
                          resource_base_path='/dev/neikon/kinetic_sol')
+        self.version = version
         self.create_action('quit', lambda *_: self.quit(), ['<control>q'])
         self.create_action('about', self.on_about_action)
 
@@ -55,7 +56,7 @@ class KineticsolApplication(Adw.Application):
         about = Adw.AboutDialog(application_name='KineticSOL',
                                 application_icon='dev.neikon.kinetic_sol',
                                 developer_name='neikon',
-                                version='0.1.0',
+                                version=self.version,
                                 comments=_('Remote Linux power agent for Kinetic WOL.'),
                                 # Translators: Replace "translator-credits" with your name/username, and optionally an email or URL.
                                 translator_credits = _('translator-credits'),
@@ -81,5 +82,5 @@ class KineticsolApplication(Adw.Application):
 
 def main(version):
     """The application's entry point."""
-    app = KineticsolApplication()
+    app = KineticsolApplication(version)
     return app.run(sys.argv)

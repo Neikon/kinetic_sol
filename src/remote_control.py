@@ -20,21 +20,33 @@
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import threading
+from urllib.parse import urlparse
 
 from gi.repository import GLib
 
 POWER_OFF_PATH = '/api/v1/poweroff'
 STATUS_PATH = '/api/v1/status'
+LEGACY_POWER_OFF_PATH = '/v1/poweroff'
+LEGACY_STATUS_PATH = '/v1/status'
 
 
 class _CommandHTTPServer(ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = True
 
-    def __init__(self, server_address, request_handler_class, token, on_poweroff_request, on_event):
+    def __init__(
+        self,
+        server_address,
+        request_handler_class,
+        token,
+        on_poweroff_request,
+        on_status_request,
+        on_event,
+    ):
         super().__init__(server_address, request_handler_class)
         self.token = token
         self.on_poweroff_request = on_poweroff_request
+        self.on_status_request = on_status_request
         self.on_event = on_event
 
 
@@ -42,14 +54,26 @@ class _CommandHandler(BaseHTTPRequestHandler):
     server_version = 'KineticSOL/0.1'
 
     def do_GET(self):
-        if self.path != STATUS_PATH:
+        request_path = urlparse(self.path).path
+        if request_path not in {STATUS_PATH, LEGACY_STATUS_PATH}:
             self._send_json(404, {'ok': False, 'message': 'Not found.'})
             return
 
-        self._send_json(200, {'ok': True, 'message': 'Listener is ready.'})
+        client_host = self.client_address[0]
+        if not self._is_authorized():
+            self.server.on_event(
+                'request-rejected',
+                f'Rejected remote status request from {client_host}: invalid token.',
+            )
+            self._send_json(401, {'ok': False, 'code': 'unauthorized', 'message': 'Invalid bearer token.'})
+            return
+
+        result = self.server.on_status_request(client_host)
+        self._send_json(200, result)
 
     def do_POST(self):
-        if self.path != POWER_OFF_PATH:
+        request_path = urlparse(self.path).path
+        if request_path not in {POWER_OFF_PATH, LEGACY_POWER_OFF_PATH}:
             self._send_json(404, {'ok': False, 'message': 'Not found.'})
             return
 
@@ -59,9 +83,10 @@ class _CommandHandler(BaseHTTPRequestHandler):
                 'request-rejected',
                 f'Rejected remote request from {client_host}: invalid token.',
             )
-            self._send_json(401, {'ok': False, 'message': 'Invalid bearer token.'})
+            self._send_json(401, {'ok': False, 'code': 'unauthorized', 'message': 'Invalid bearer token.'})
             return
 
+        self._discard_request_body()
         self.server.on_event(
             'request-received',
             f'Received remote power-off request from {client_host}.',
@@ -77,6 +102,19 @@ class _CommandHandler(BaseHTTPRequestHandler):
         header = self.headers.get('Authorization', '')
         return header == f'Bearer {self.server.token}'
 
+    def _discard_request_body(self):
+        content_length = self.headers.get('Content-Length')
+        if content_length is None:
+            return
+
+        try:
+            length = int(content_length)
+        except ValueError:
+            return
+
+        if length > 0:
+            self.rfile.read(length)
+
     def _send_json(self, status_code: int, payload):
         body = json.dumps(payload).encode('utf-8')
         self.send_response(status_code)
@@ -90,8 +128,9 @@ class _CommandHandler(BaseHTTPRequestHandler):
 
 
 class RemoteCommandServer:
-    def __init__(self, on_poweroff_request, on_event):
+    def __init__(self, on_poweroff_request, on_status_request, on_event):
         self._on_poweroff_request = on_poweroff_request
+        self._on_status_request = on_status_request
         self._on_event = on_event
         self._server = None
         self._thread = None
@@ -108,6 +147,7 @@ class RemoteCommandServer:
             _CommandHandler,
             token,
             self._dispatch_poweroff,
+            self._dispatch_status,
             self._dispatch_event,
         )
         self._thread = threading.Thread(
@@ -137,11 +177,17 @@ class RemoteCommandServer:
         GLib.idle_add(self._on_event, event_code, message)
 
     def _dispatch_poweroff(self, client_host: str):
+        return self._dispatch_to_main_loop(lambda: self._on_poweroff_request(client_host))
+
+    def _dispatch_status(self, client_host: str):
+        return self._dispatch_to_main_loop(lambda: self._on_status_request(client_host))
+
+    def _dispatch_to_main_loop(self, callback):
         result = {}
         completed = threading.Event()
 
         def invoke():
-            result.update(self._on_poweroff_request(client_host))
+            result.update(callback())
             completed.set()
             return False
 

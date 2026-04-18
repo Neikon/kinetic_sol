@@ -15,6 +15,7 @@
 - Arquitectura inicial: una sola app con UI y lógica de escucha integrada, sin asumir todavía un daemon de sistema separado.
 - Canal de control remoto inicial: servicio HTTP local en la red del usuario con autenticación por token compartido.
 - Implementación inicial del listener: `ThreadingHTTPServer` de la librería estándar, para evitar dependencias externas y mantener compatibilidad con el runtime Flatpak.
+- Contrato de compatibilidad móvil: rutas canónicas `/api/v1/status` y `/api/v1/poweroff`, con compatibilidad temporal para `/v1/status` y `/v1/poweroff`.
 - Acción remota inicial: apagado del equipo.
 - Vía preferida para apagar: D-Bus a `org.freedesktop.login1`, método `PowerOff(false)`.
 - Política de privilegios: evitar `sudo` interactivo y evitar abrir más permisos de los estrictamente necesarios en Flatpak.

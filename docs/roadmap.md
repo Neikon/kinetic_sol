@@ -11,6 +11,7 @@
 - [x] Crear una primera UI de estado y diagnóstico.
 - [x] Implementar un listener HTTP local autenticado por token.
 - [x] Implementar la integración D-Bus básica con `org.freedesktop.login1`.
+- [x] Cerrar un contrato HTTP inicial compatible con la app Android.
 
 ## En curso
 
