@@ -101,6 +101,18 @@
                             </child>
                             <child>
                               <object class="AdwActionRow">
+                                <property name="title" translatable="yes">Run in background</property>
+                                <property name="subtitle" translatable="yes">When enabled, closing the window hides KineticSOL instead of exiting while the remote listener stays available.</property>
+                                <property name="activatable-widget">background_switch</property>
+                                <child type="suffix">
+                                  <object class="GtkSwitch" id="background_switch">
+                                    <property name="valign">center</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="AdwActionRow">
                                 <property name="title" translatable="yes">Listen port</property>
                                 <property name="subtitle" translatable="yes">The HTTP listener binds on all interfaces inside the sandbox.</property>
                                 <child type="suffix">
@@ -160,6 +172,12 @@
                               <object class="AdwActionRow" id="listener_state_row">
                                 <property name="title" translatable="yes">Listener state</property>
                                 <property name="subtitle" translatable="yes">Not evaluated yet.</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="AdwActionRow" id="tray_state_row">
+                                <property name="title" translatable="yes">Plasma tray</property>
+                                <property name="subtitle" translatable="yes">Tray integration inactive. It will activate when the app is hidden in background mode.</property>
                               </object>
                             </child>
                             <child>

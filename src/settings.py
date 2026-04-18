@@ -32,6 +32,7 @@ MAX_PORT = 65535
 class SettingsSnapshot:
     listen_enabled: bool
     start_listener_on_launch: bool
+    run_in_background: bool
     show_diagnostics: bool
     listen_port: int
     shared_token: str
@@ -54,6 +55,7 @@ class AppSettings:
         return SettingsSnapshot(
             listen_enabled=self._settings.get_boolean('listen-enabled'),
             start_listener_on_launch=self._settings.get_boolean('start-listener-on-launch'),
+            run_in_background=self._settings.get_boolean('run-in-background'),
             show_diagnostics=self._settings.get_boolean('show-diagnostics'),
             listen_port=self._clamp_port(self._settings.get_int('listen-port')),
             shared_token=self.ensure_token(),
@@ -63,12 +65,14 @@ class AppSettings:
         snapshot = SettingsSnapshot(
             listen_enabled=snapshot.listen_enabled,
             start_listener_on_launch=snapshot.start_listener_on_launch,
+            run_in_background=snapshot.run_in_background,
             show_diagnostics=snapshot.show_diagnostics,
             listen_port=self._clamp_port(snapshot.listen_port),
             shared_token=snapshot.shared_token.strip() or self.ensure_token(),
         )
         self._settings.set_boolean('listen-enabled', snapshot.listen_enabled)
         self._settings.set_boolean('start-listener-on-launch', snapshot.start_listener_on_launch)
+        self._settings.set_boolean('run-in-background', snapshot.run_in_background)
         self._settings.set_boolean('show-diagnostics', snapshot.show_diagnostics)
         self._settings.set_int('listen-port', snapshot.listen_port)
         self._settings.set_string('shared-token', snapshot.shared_token)

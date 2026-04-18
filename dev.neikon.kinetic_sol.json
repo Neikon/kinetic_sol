@@ -7,6 +7,8 @@
     "finish-args" : [
         "--share=network",
         "--system-talk-name=org.freedesktop.login1",
+        "--talk-name=org.kde.StatusNotifierWatcher",
+        "--own-name=org.kde.StatusNotifierItem.dev.neikon.kinetic_sol",
         "--share=ipc",
         "--socket=fallback-x11",
         "--device=dri",
