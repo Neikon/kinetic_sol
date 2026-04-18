@@ -28,6 +28,15 @@ gi.require_version('Adw', '1')
 from gi.repository import Gtk, Gio, Adw
 from .window import KineticsolWindow
 
+CURRENT_RELEASE_NOTES = """
+<p>Date-based release aligned with the new <code>YY.MM.DD.counter</code> versioning scheme.</p>
+<ul>
+  <li>The app now uses an always-on listener model with simpler setup and fewer toggles.</li>
+  <li>Background mode and Plasma tray integration are now available for easier long-running use.</li>
+  <li>The About dialog includes in-app release notes for the current version.</li>
+</ul>
+""".strip()
+
 
 class KineticsolApplication(Adw.Application):
     """The main application singleton class."""
@@ -91,6 +100,8 @@ class KineticsolApplication(Adw.Application):
         about.set_website('https://github.com/Neikon/kinetic_sol')
         about.set_issue_url('https://github.com/Neikon/kinetic_sol/issues')
         about.set_support_url('https://github.com/Neikon/kinetic_wol')
+        about.set_release_notes_version(self.version)
+        about.set_release_notes(CURRENT_RELEASE_NOTES)
         about.add_link(_('KineticSOL Repository'), 'https://github.com/Neikon/kinetic_sol')
         about.add_link(_('Kinetic WOL Android Repository'), 'https://github.com/Neikon/kinetic_wol.git')
         about.present(self.props.active_window)
