@@ -1,5 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist gettext-domain="kineticsol">
 	<schema id="dev.neikon.kinetic_sol" path="/dev/neikon/kinetic_sol/">
+		<key name="listen-enabled" type="b">
+			<default>true</default>
+			<summary>Enable the remote listener</summary>
+			<description>Whether the local HTTP listener should be enabled.</description>
+		</key>
+		<key name="listen-port" type="i">
+			<default>39721</default>
+			<summary>Listen port</summary>
+			<description>TCP port used for incoming remote control commands.</description>
+		</key>
+		<key name="shared-token" type="s">
+			<default>''</default>
+			<summary>Shared token</summary>
+			<description>Bearer token required to accept remote commands.</description>
+		</key>
+		<key name="start-listener-on-launch" type="b">
+			<default>true</default>
+			<summary>Start listener on launch</summary>
+			<description>Whether the listener should start automatically when the app launches.</description>
+		</key>
 	</schema>
 </schemalist>

@@ -38,7 +38,6 @@ class KineticsolApplication(Adw.Application):
                          resource_base_path='/dev/neikon/kinetic_sol')
         self.create_action('quit', lambda *_: self.quit(), ['<control>q'])
         self.create_action('about', self.on_about_action)
-        self.create_action('preferences', self.on_preferences_action)
 
     def do_activate(self):
         """Called when the application is activated.
@@ -57,15 +56,12 @@ class KineticsolApplication(Adw.Application):
                                 application_icon='dev.neikon.kinetic_sol',
                                 developer_name='neikon',
                                 version='0.1.0',
+                                comments=_('Remote Linux power agent for Kinetic WOL.'),
                                 # Translators: Replace "translator-credits" with your name/username, and optionally an email or URL.
                                 translator_credits = _('translator-credits'),
                                 developers=['neikon'],
                                 copyright='© 2026 neikon')
         about.present(self.props.active_window)
-
-    def on_preferences_action(self, widget, _):
-        """Callback for the app.preferences action."""
-        print('app.preferences action activated')
 
     def create_action(self, name, callback, shortcuts=None):
         """Add an application action.

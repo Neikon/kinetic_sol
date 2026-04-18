@@ -2,10 +2,17 @@
 <interface>
   <requires lib="gtk" version="4.0"/>
   <requires lib="Adw" version="1.0"/>
+  <object class="GtkAdjustment" id="port_adjustment">
+    <property name="lower">1024</property>
+    <property name="upper">65535</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
+    <property name="value">39721</property>
+  </object>
   <template class="KineticsolWindow" parent="AdwApplicationWindow">
     <property name="title" translatable="yes">KineticSOL</property>
-    <property name="default-width">800</property>
-    <property name="default-height">600</property>
+    <property name="default-width">760</property>
+    <property name="default-height">680</property>
     <property name="content">
       <object class="AdwToolbarView">
         <child type="top">
@@ -21,11 +28,170 @@
           </object>
         </child>
         <property name="content">
-          <object class="GtkLabel" id="label">
-            <property name="label" translatable="yes">Hello, World!</property>
-            <style>
-              <class name="title-1"/>
-            </style>
+          <object class="AdwToastOverlay" id="toast_overlay">
+            <property name="child">
+              <object class="GtkScrolledWindow">
+                <property name="hscrollbar-policy">never</property>
+                <property name="child">
+                  <object class="AdwClamp">
+                    <property name="maximum-size">780</property>
+                    <property name="tightening-threshold">520</property>
+                    <property name="child">
+                      <object class="GtkBox">
+                        <property name="orientation">vertical</property>
+                        <property name="spacing">24</property>
+                        <property name="margin-top">24</property>
+                        <property name="margin-bottom">24</property>
+                        <property name="margin-start">18</property>
+                        <property name="margin-end">18</property>
+
+                        <child>
+                          <object class="GtkBox">
+                            <property name="orientation">vertical</property>
+                            <property name="spacing">8</property>
+                            <child>
+                              <object class="GtkLabel">
+                                <property name="xalign">0</property>
+                                <property name="label" translatable="yes">Linux shutdown bridge for Kinetic WOL</property>
+                                <style>
+                                  <class name="title-2"/>
+                                </style>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkLabel">
+                                <property name="xalign">0</property>
+                                <property name="wrap">True</property>
+                                <property name="label" translatable="yes">This app listens on the local network, validates a shared token and tries to power off the machine through logind without using interactive sudo.</property>
+                                <style>
+                                  <class name="dim-label"/>
+                                </style>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+
+                        <child>
+                          <object class="AdwPreferencesGroup">
+                            <property name="title" translatable="yes">Remote Listener</property>
+                            <property name="description" translatable="yes">Configure the local HTTP endpoint that the Android app will call.</property>
+                            <child>
+                              <object class="AdwActionRow">
+                                <property name="title" translatable="yes">Enable remote listener</property>
+                                <property name="subtitle" translatable="yes">When disabled, KineticSOL will not accept remote commands.</property>
+                                <property name="activatable-widget">listen_switch</property>
+                                <child type="suffix">
+                                  <object class="GtkSwitch" id="listen_switch">
+                                    <property name="valign">center</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="AdwActionRow">
+                                <property name="title" translatable="yes">Start listener on launch</property>
+                                <property name="subtitle" translatable="yes">If enabled, the listener starts automatically when the app opens.</property>
+                                <property name="activatable-widget">autostart_switch</property>
+                                <child type="suffix">
+                                  <object class="GtkSwitch" id="autostart_switch">
+                                    <property name="valign">center</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="AdwActionRow">
+                                <property name="title" translatable="yes">Listen port</property>
+                                <property name="subtitle" translatable="yes">The HTTP listener binds on all interfaces inside the sandbox.</property>
+                                <child type="suffix">
+                                  <object class="GtkSpinButton" id="port_spin">
+                                    <property name="valign">center</property>
+                                    <property name="numeric">True</property>
+                                    <property name="adjustment">port_adjustment</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="AdwActionRow">
+                                <property name="title" translatable="yes">Shared token</property>
+                                <property name="subtitle" translatable="yes">The Android app must send this value as a Bearer token.</property>
+                                <child type="suffix">
+                                  <object class="GtkEntry" id="token_entry">
+                                    <property name="valign">center</property>
+                                    <property name="hexpand">True</property>
+                                    <property name="width-chars">28</property>
+                                    <property name="monospace">True</property>
+                                  </object>
+                                </child>
+                                <child type="suffix">
+                                  <object class="GtkButton" id="rotate_token_button">
+                                    <property name="valign">center</property>
+                                    <property name="label" translatable="yes">Rotate</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="AdwActionRow" id="endpoint_row">
+                                <property name="title" translatable="yes">Remote API</property>
+                                <property name="subtitle" translatable="yes">The endpoint details will appear here.</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="AdwActionRow">
+                                <property name="title" translatable="yes">Apply runtime configuration</property>
+                                <property name="subtitle" translatable="yes">Saves settings and starts or stops the listener immediately.</property>
+                                <child type="suffix">
+                                  <object class="GtkButton" id="save_button">
+                                    <property name="valign">center</property>
+                                    <property name="label" translatable="yes">Save and apply</property>
+                                    <style>
+                                      <class name="suggested-action"/>
+                                    </style>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+
+                        <child>
+                          <object class="AdwPreferencesGroup">
+                            <property name="title" translatable="yes">Diagnostics</property>
+                            <property name="description" translatable="yes">These rows expose the current listener state and the current logind capability check.</property>
+                            <child>
+                              <object class="AdwActionRow" id="listener_state_row">
+                                <property name="title" translatable="yes">Listener state</property>
+                                <property name="subtitle" translatable="yes">Not evaluated yet.</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="AdwActionRow" id="power_state_row">
+                                <property name="title" translatable="yes">Power backend</property>
+                                <property name="subtitle" translatable="yes">Not evaluated yet.</property>
+                                <child type="suffix">
+                                  <object class="GtkButton" id="refresh_power_button">
+                                    <property name="valign">center</property>
+                                    <property name="label" translatable="yes">Refresh</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="AdwActionRow" id="last_request_row">
+                                <property name="title" translatable="yes">Last remote command</property>
+                                <property name="subtitle" translatable="yes">No remote commands received yet.</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </property>
+                  </object>
+                </property>
+              </object>
+            </property>
           </object>
         </property>
       </object>
@@ -34,16 +200,12 @@
   <menu id="primary_menu">
     <section>
       <item>
-        <attribute name="label" translatable="yes">_Preferences</attribute>
-        <attribute name="action">app.preferences</attribute>
-      </item>
-      <item>
-        <attribute name="label" translatable="yes">_Keyboard Shortcuts</attribute>
-        <attribute name="action">app.shortcuts</attribute>
-      </item>
-      <item>
         <attribute name="label" translatable="yes">_About KineticSOL</attribute>
         <attribute name="action">app.about</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">_Quit</attribute>
+        <attribute name="action">app.quit</attribute>
       </item>
     </section>
   </menu>

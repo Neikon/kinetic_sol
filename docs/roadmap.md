@@ -6,20 +6,21 @@
 - [x] Confirmar que la base actual es una plantilla GNOME en Python con GTK4/libadwaita y Flatpak.
 - [x] Crear memoria persistente del proyecto.
 - [x] Documentar la arquitectura inicial, permisos Flatpak, riesgos de polkit y plan de validación.
+- [x] Añadir claves GSettings para puerto, token y estado del listener.
+- [x] Ajustar el manifest Flatpak para hablar con `org.freedesktop.login1`.
+- [x] Crear una primera UI de estado y diagnóstico.
+- [x] Implementar un listener HTTP local autenticado por token.
+- [x] Implementar la integración D-Bus básica con `org.freedesktop.login1`.
 
 ## En curso
 
 - [ ] Convertir la plantilla actual en la base real de KineticSOL.
-- [ ] Implementar el modelo de configuración persistente.
-- [ ] Implementar la primera UI orientada a estado y diagnóstico.
+- [ ] Verificar el comportamiento real del apagado no interactivo desde Flatpak.
+- [ ] Ajustar la UX según el resultado real de polkit.
 
 ## Pendiente
 
-- [ ] Añadir claves GSettings para puerto, token y estado del listener.
-- [ ] Implementar un listener HTTP local autenticado por token.
-- [ ] Implementar la integración D-Bus con `org.freedesktop.login1`.
 - [ ] Exponer en la UI el estado de conectividad, autorización y energía.
-- [ ] Ajustar el manifest Flatpak para permisos mínimos necesarios.
 - [ ] Probar la app empaquetada en entorno real con GNOME/Bazzite.
 - [ ] Registrar resultados reales de `CanPowerOff()` y `PowerOff(false)`.
 - [ ] Decidir, según la validación, si la app única sigue siendo suficiente o si hace falta separar componentes.
