@@ -23,6 +23,13 @@
   - `404`: endpoint o base URL incorrectos
   - `503`: agente accesible pero apagado no disponible por `login1`/polkit/runtime
   - timeout: error de conectividad
+- Plan mínimo del lado Android ya acordado:
+  - tocar `AgentShutdownSender.kt`, `HomeViewModel.kt`, `HomeUiState.kt`, `KineticWolApp.kt` y `strings.xml`
+  - añadir `GET /api/v1/status` para “Probar conexión”
+  - migrar `POST /api/v1/poweroff`
+  - usar resultados tipados mínimos en vez de error genérico
+  - no introducir fallback a `/v1/...` ni tocar SSH en esta fase
+- Android usará `canPowerOff == "yes"` como señal de “agente listo” y mostrará un aviso cuando el agente responda pero el backend no esté listo.
 - Acción remota inicial: apagado del equipo.
 - Vía preferida para apagar: D-Bus a `org.freedesktop.login1`, método `PowerOff(false)`.
 - Política de privilegios: evitar `sudo` interactivo y evitar abrir más permisos de los estrictamente necesarios en Flatpak.
