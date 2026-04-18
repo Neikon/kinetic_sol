@@ -109,9 +109,16 @@ La app no abre acceso genérico al system bus.
 
 ## Repo Flatpak
 
-El proyecto puede publicar un repositorio Flatpak estático en GitHub Pages.
+El proyecto publica un repositorio Flatpak estático en GitHub Pages.
 
-Cuando ese workflow esté activo en `main`, la idea es usar:
+Enlaces relevantes:
+
+- landing:
+  - <https://neikon.github.io/kinetic_sol/>
+- `.flatpakrepo`:
+  - <https://neikon.github.io/kinetic_sol/kineticsol.flatpakrepo>
+
+Instalación:
 
 ```bash
 flatpak remote-add --if-not-exists --from kineticsol https://neikon.github.io/kinetic_sol/kineticsol.flatpakrepo
@@ -123,6 +130,30 @@ Notas:
 - el remote publicado en GitHub Pages debe ir firmado con la clave GPG del pipeline
 - el `.flatpakrepo` publicado incluye la clave pública en `GPGKey=`, así que no requiere flags especiales
 - el repo publicado también expone una landing con instrucciones y release notes
+
+## Qué es un `.flatpakref`
+
+Un `.flatpakref` es un descriptor orientado a una app concreta.
+
+Mientras que un `.flatpakrepo` añade un remote completo, un `.flatpakref` puede:
+
+- apuntar directamente a una aplicación concreta
+- indicar el remote sugerido
+- incluir la URL del runtime repo
+- incluir también la clave pública GPG
+
+Eso permite instalaciones más directas, por ejemplo:
+
+```bash
+flatpak install https://example.org/dev.neikon.kinetic_sol.flatpakref
+```
+
+En otras palabras:
+
+- `.flatpakrepo`: sirve para dar de alta un repositorio
+- `.flatpakref`: sirve para instalar una app concreta desde ese repositorio
+
+Para KineticSOL no es estrictamente necesario mientras ya exista `kineticsol.flatpakrepo`, pero puede ser un buen siguiente paso si quieres una URL de instalación todavía más simple.
 
 ## Desarrollo
 
