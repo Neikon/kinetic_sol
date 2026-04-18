@@ -41,6 +41,7 @@
 - El pipeline debe poder publicar además un repositorio Flatpak estático en GitHub Pages para `main`, junto con un `.flatpakrepo` y una landing de instalación.
 - El pipeline debe firmar el repo OSTree y los bundles Flatpak con una clave GPG dedicada de CI, tomada desde GitHub Secrets.
 - El `.flatpakrepo` publicado en GitHub Pages debe incluir `GPGKey=` con la clave pública base64 para permitir instalación sin `--no-gpg-verify`.
+- El pipeline también debe publicar un `.flatpakref` firmado para instalación directa de KineticSOL desde una única URL.
 - La lógica de descubrimiento de IP LAN, construcción de `baseUrl` sugerida y generación de `curl` para Android debe vivir fuera de `window.py`, en un módulo dedicado, para mantener la ventana centrada en UI y ciclo de vida.
 - El proyecto debe usar versionado con formato `YY.MM.DD.contador`.
 - Acción remota inicial: apagado del equipo.

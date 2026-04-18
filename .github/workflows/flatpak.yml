@@ -24,6 +24,8 @@ env:
   FLATPAK_BRANCH: main
   PAGES_ARTIFACT_DIR: flatpak-pages
   FLATPAKREPO_NAME: kineticsol.flatpakrepo
+  FLATPAKREF_NAME: dev.neikon.kinetic_sol.flatpakref
+  RUNTIME_REPO_URL: https://flathub.org/repo/flathub.flatpakrepo
 
 concurrency:
   group: flatpak-${{ github.ref }}
@@ -164,6 +166,7 @@ jobs:
           pages_base_url = f'https://{repository_owner.lower()}.github.io/{repository_name}'
           pages_repo_url = f'{pages_base_url}/repo/'
           flatpakrepo_url = f'{pages_base_url}/{os.environ["FLATPAKREPO_NAME"]}'
+          flatpakref_url = f'{pages_base_url}/{os.environ["FLATPAKREF_NAME"]}'
 
           main_release_tag = f'v{app_version}-main.{run_number}'
           main_release_name = f'KineticSOL {app_version} main build #{run_number}'
@@ -187,6 +190,7 @@ jobs:
               output.write(f'pages_base_url={pages_base_url}\n')
               output.write(f'pages_repo_url={pages_repo_url}\n')
               output.write(f'flatpakrepo_url={flatpakrepo_url}\n')
+              output.write(f'flatpakref_url={flatpakref_url}\n')
               output.write('release_notes<<EOF\n')
               output.write(release_notes)
               output.write('\nEOF\n')
@@ -234,7 +238,9 @@ jobs:
             --homepage-url "https://github.com/${GITHUB_REPOSITORY}" \
             --remote-name "${FLATPAK_REMOTE_NAME}" \
             --default-branch "${FLATPAK_BRANCH}" \
+            --runtime-repo-url "${RUNTIME_REPO_URL}" \
             --gpg-key-base64 "${FLATPAK_GPG_PUBLIC_KEY_BASE64}" \
+            --flatpakref-name "${FLATPAKREF_NAME}" \
             --flatpakrepo-name "${FLATPAKREPO_NAME}"
 
       - name: Upload GitHub Pages artifact

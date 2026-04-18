@@ -88,9 +88,10 @@ Permisos mínimos esperados:
 - Ese repo debe incluir:
   - contenido OSTree exportado
   - `.flatpakrepo`
+  - `.flatpakref`
   - landing simple con instrucciones de instalación y notas de release
 - La publicación en GitHub Pages debe ir firmada con una clave GPG dedicada del pipeline.
-- El `.flatpakrepo` publicado debe incluir la clave pública base64 para instalación sin flags especiales.
+- Tanto el `.flatpakrepo` como el `.flatpakref` publicados deben incluir la clave pública base64 para instalación sin flags especiales.
 
 Permisos explícitamente no deseados por ahora:
 

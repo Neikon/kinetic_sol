@@ -139,8 +139,12 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           <pre>{remote_add_command}</pre>
         </div>
         <div class="card">
-          <h2>Instalar la app</h2>
+          <h2>Instalar desde el remote</h2>
           <pre>{install_command}</pre>
+        </div>
+        <div class="card">
+          <h2>Instalar con flatpakref</h2>
+          <pre>{flatpakref_install_command}</pre>
         </div>
       </div>
 
@@ -154,6 +158,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
           <h2>Archivos publicados</h2>
           <ul>
             <li><a href="{flatpakrepo_name}">{flatpakrepo_name}</a></li>
+            <li><a href="{flatpakref_name}">{flatpakref_name}</a></li>
             <li><a href="repo/">Repositorio OSTree</a></li>
           </ul>
         </div>
@@ -195,6 +200,35 @@ def build_flatpakrepo(
     return "\n".join(lines)
 
 
+def build_flatpakref(
+    *,
+    app_id: str,
+    app_name: str,
+    default_branch: str,
+    repo_url: str,
+    runtime_repo_url: str,
+    remote_name: str,
+    homepage: str,
+    gpg_key_base64: str | None,
+) -> str:
+    lines = [
+        "[Flatpak Ref]",
+        "Version=1",
+        f"Name={app_id}",
+        f"Branch={default_branch}",
+        f"Title={app_name}",
+        f"Url={repo_url}",
+        f"SuggestRemoteName={remote_name}",
+        f"Homepage={homepage}",
+        f"RuntimeRepo={runtime_repo_url}",
+        "IsRuntime=false",
+    ]
+    if gpg_key_base64:
+        lines.append(f"GPGKey={gpg_key_base64}")
+    lines.append("")
+    return "\n".join(lines)
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", required=True)
@@ -206,7 +240,9 @@ def parse_args():
     parser.add_argument("--homepage-url", required=True)
     parser.add_argument("--remote-name", required=True)
     parser.add_argument("--default-branch", required=True)
+    parser.add_argument("--runtime-repo-url", required=True)
     parser.add_argument("--gpg-key-base64")
+    parser.add_argument("--flatpakref-name", default="dev.neikon.kinetic_sol.flatpakref")
     parser.add_argument("--flatpakrepo-name", default="kineticsol.flatpakrepo")
     return parser.parse_args()
 
@@ -223,7 +259,18 @@ def main():
         default_branch=args.default_branch,
         gpg_key_base64=args.gpg_key_base64,
     )
+    flatpakref_text = build_flatpakref(
+        app_id=args.app_id,
+        app_name=args.app_name,
+        default_branch=args.default_branch,
+        repo_url=args.repo_url,
+        runtime_repo_url=args.runtime_repo_url,
+        remote_name=args.remote_name,
+        homepage=args.homepage_url,
+        gpg_key_base64=args.gpg_key_base64,
+    )
     (output_dir / args.flatpakrepo_name).write_text(flatpakrepo_text, encoding="utf-8")
+    (output_dir / args.flatpakref_name).write_text(flatpakref_text, encoding="utf-8")
     (output_dir / ".nojekyll").write_text("", encoding="utf-8")
 
     remote_add_command = (
@@ -231,6 +278,9 @@ def main():
         f"--from {args.remote_name} {args.repo_url.removesuffix('/repo/')}/{args.flatpakrepo_name}"
     )
     install_command = f"flatpak install {args.remote_name} {args.app_id}//{args.default_branch}"
+    flatpakref_install_command = (
+        f"flatpak install {args.repo_url.removesuffix('/repo/')}/{args.flatpakref_name}"
+    )
     signature_note = (
         "Este remote está <strong>firmado con GPG</strong> y puede añadirse sin banderas"
         " especiales."
@@ -243,8 +293,10 @@ def main():
         app_version=html.escape(args.app_version),
         remote_add_command=html.escape(remote_add_command),
         install_command=html.escape(install_command),
+        flatpakref_install_command=html.escape(flatpakref_install_command),
         release_notes=args.release_notes_html,
         signature_note=signature_note,
+        flatpakref_name=html.escape(args.flatpakref_name),
         flatpakrepo_name=html.escape(args.flatpakrepo_name),
     )
     (output_dir / "index.html").write_text(index_html, encoding="utf-8")
