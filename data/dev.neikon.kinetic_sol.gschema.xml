@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist gettext-domain="kineticsol">
+	<schema id="dev.neikon.kinetic_sol" path="/dev/neikon/kinetic_sol/">
+	</schema>
+</schemalist>

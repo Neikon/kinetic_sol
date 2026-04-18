@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=KineticSOL
+Exec=kineticsol
+Icon=dev.neikon.kinetic_sol
+Terminal=false
+Type=Application
+Categories=Utility;
+Keywords=GTK;
+StartupNotify=true
+DBusActivatable=true

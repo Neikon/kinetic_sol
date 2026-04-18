@@ -1,0 +1,8 @@
+# List of source files containing translatable strings.
+# Please keep this file sorted alphabetically.
+data/dev.neikon.kinetic_sol.desktop.in
+data/dev.neikon.kinetic_sol.metainfo.xml.in
+data/dev.neikon.kinetic_sol.gschema.xml
+src/main.py
+src/window.py
+src/window.ui
