@@ -21,6 +21,7 @@ from datetime import datetime
 from gettext import gettext as _
 import ipaddress
 from secrets import token_urlsafe
+import shlex
 import socket
 
 from gi.repository import Adw
@@ -49,6 +50,7 @@ class KineticsolWindow(Adw.ApplicationWindow):
     base_url_row = Gtk.Template.Child()
     copy_base_url_button = Gtk.Template.Child()
     endpoint_row = Gtk.Template.Child()
+    copy_curl_button = Gtk.Template.Child()
     listener_state_row = Gtk.Template.Child()
     power_state_row = Gtk.Template.Child()
     last_request_row = Gtk.Template.Child()
@@ -71,6 +73,7 @@ class KineticsolWindow(Adw.ApplicationWindow):
         self.rotate_token_button.connect('clicked', self._on_rotate_token_clicked)
         self.copy_token_button.connect('clicked', self._on_copy_token_clicked)
         self.copy_base_url_button.connect('clicked', self._on_copy_base_url_clicked)
+        self.copy_curl_button.connect('clicked', self._on_copy_curl_clicked)
         self.refresh_power_button.connect('clicked', self._on_refresh_power_clicked)
         self.connect('close-request', self._on_close_request)
 
@@ -127,6 +130,15 @@ class KineticsolWindow(Adw.ApplicationWindow):
         self._copy_to_clipboard(base_url)
         self._show_toast(_('Base URL copied to clipboard.'))
 
+    def _on_copy_curl_clicked(self, _button):
+        curl_command = self._build_status_curl_command(int(self.port_spin.get_value()))
+        if curl_command is None:
+            self._show_toast(_('A base URL and token are required to build the curl command.'))
+            return
+
+        self._copy_to_clipboard(curl_command)
+        self._show_toast(_('curl command copied to clipboard.'))
+
     def _on_refresh_power_clicked(self, _button):
         self._refresh_power_state()
         self._show_toast(_('Power capability refreshed.'))
@@ -158,6 +170,7 @@ class KineticsolWindow(Adw.ApplicationWindow):
         primary_base_url = self._get_primary_android_base_url(port)
         self.base_url_row.set_subtitle(self._build_android_base_url_subtitle(port, primary_base_url))
         self.copy_base_url_button.set_sensitive(primary_base_url is not None)
+        self.copy_curl_button.set_sensitive(self._build_status_curl_command(port) is not None)
         self.endpoint_row.set_subtitle(
             f'GET {STATUS_PATH} and POST {POWER_OFF_PATH} on port {port}. '
             f'Legacy /v1 compatibility is enabled. Bearer token required.'
@@ -192,6 +205,20 @@ class KineticsolWindow(Adw.ApplicationWindow):
             return None
 
         return f'http://{addresses[0]}:{port}'
+
+    def _build_status_curl_command(self, port: int):
+        base_url = self._get_primary_android_base_url(port)
+        token = self.token_entry.get_text().strip()
+        if base_url is None or not token:
+            return None
+
+        url = f'{base_url}{STATUS_PATH}'
+        return (
+            f'curl -i '
+            f'-H {shlex.quote("Accept: application/json")} '
+            f'-H {shlex.quote(f"Authorization: Bearer {token}")} '
+            f'{shlex.quote(url)}'
+        )
 
     def _get_candidate_ipv4_addresses(self):
         private_candidates = []

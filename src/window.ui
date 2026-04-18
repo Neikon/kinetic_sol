@@ -153,6 +153,12 @@
                               <object class="AdwActionRow" id="endpoint_row">
                                 <property name="title" translatable="yes">Remote API</property>
                                 <property name="subtitle" translatable="yes">The endpoint details will appear here.</property>
+                                <child type="suffix">
+                                  <object class="GtkButton" id="copy_curl_button">
+                                    <property name="valign">center</property>
+                                    <property name="label" translatable="yes">Copy curl</property>
+                                  </object>
+                                </child>
                               </object>
                             </child>
                             <child>
