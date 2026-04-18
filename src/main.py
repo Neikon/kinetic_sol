@@ -72,7 +72,7 @@ class KineticsolApplication(Adw.Application):
         win = self.props.active_window
         if win is not None:
             win.prepare_for_shutdown()
-        super().do_shutdown()
+        Adw.Application.do_shutdown(self)
 
     def on_about_action(self, *args):
         """Callback for the app.about action."""
