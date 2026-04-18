@@ -16,6 +16,7 @@
 - [x] Acordar el plan mínimo de implementación Android para `status`, `poweroff` y mapeo de errores.
 - [x] Mostrar en la UI Linux la `baseUrl` sugerida para configurar Android.
 - [x] Añadir un toggle de menú para mostrar u ocultar `Diagnostics`.
+- [x] Guardar y aplicar la configuración automáticamente, sin botón manual de guardado.
 
 ## En curso
 

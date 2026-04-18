@@ -54,7 +54,6 @@ class KineticsolWindow(Adw.ApplicationWindow):
     listener_state_row = Gtk.Template.Child()
     power_state_row = Gtk.Template.Child()
     last_request_row = Gtk.Template.Child()
-    save_button = Gtk.Template.Child()
     rotate_token_button = Gtk.Template.Child()
     refresh_power_button = Gtk.Template.Child()
 
@@ -64,6 +63,9 @@ class KineticsolWindow(Adw.ApplicationWindow):
         self._power_controller = Login1PowerController()
         self._power_capability = None
         self._show_diagnostics = True
+        self._runtime_signature = None
+        self._settings_apply_source_id = 0
+        self._suppress_form_changes = False
         self._listener = RemoteCommandServer(
             self._handle_remote_poweroff,
             self._handle_remote_status,
@@ -75,7 +77,6 @@ class KineticsolWindow(Adw.ApplicationWindow):
             GLib.Variant.new_boolean(True),
         )
 
-        self.save_button.connect('clicked', self._on_save_clicked)
         self.rotate_token_button.connect('clicked', self._on_rotate_token_clicked)
         self.copy_token_button.connect('clicked', self._on_copy_token_clicked)
         self.copy_base_url_button.connect('clicked', self._on_copy_base_url_clicked)
@@ -87,39 +88,42 @@ class KineticsolWindow(Adw.ApplicationWindow):
         self._show_diagnostics = snapshot.show_diagnostics
         self._apply_snapshot_to_form(snapshot)
         self._set_diagnostics_visible(snapshot.show_diagnostics)
+        self._connect_form_change_handlers()
         self._update_endpoint_row(snapshot.listen_port)
-        self._update_listener_state(_('Configuration loaded. Apply to restart the listener.'))
         self._update_last_request(_('No remote commands received yet.'))
         self._refresh_power_state()
 
         if snapshot.listen_enabled and snapshot.start_listener_on_launch:
             self._apply_runtime_configuration(snapshot, show_toast=False)
+        else:
+            self._runtime_signature = self._runtime_signature_from_snapshot(snapshot)
+            if snapshot.listen_enabled:
+                self._update_listener_state(_('Listener is enabled, but it was not started automatically on launch.'))
+            else:
+                self._update_listener_state(_('Listener disabled in configuration.'))
 
     def _apply_snapshot_to_form(self, snapshot: SettingsSnapshot):
+        self._suppress_form_changes = True
         self.listen_switch.set_active(snapshot.listen_enabled)
         self.autostart_switch.set_active(snapshot.start_listener_on_launch)
         self.port_spin.set_value(snapshot.listen_port)
         self.token_entry.set_text(snapshot.shared_token)
+        self._suppress_form_changes = False
 
     def _read_form_snapshot(self) -> SettingsSnapshot:
-        token = self.token_entry.get_text().strip() or self._settings.ensure_token()
-        self.token_entry.set_text(token)
         return SettingsSnapshot(
             listen_enabled=self.listen_switch.get_active(),
             start_listener_on_launch=self.autostart_switch.get_active(),
             show_diagnostics=self._show_diagnostics,
             listen_port=int(self.port_spin.get_value()),
-            shared_token=token,
+            shared_token=self.token_entry.get_text().strip(),
         )
-
-    def _on_save_clicked(self, _button):
-        snapshot = self._settings.save(self._read_form_snapshot())
-        self._apply_runtime_configuration(snapshot, show_toast=True)
 
     def _on_rotate_token_clicked(self, _button):
         token = token_urlsafe(24)
         self.token_entry.set_text(token)
-        self._show_toast(_('Token rotated. Save to apply it to the listener.'))
+        self._persist_form_changes(apply_runtime=True)
+        self._show_toast(_('Token rotated and applied to the listener.'))
 
     def _on_copy_token_clicked(self, _button):
         token = self.token_entry.get_text().strip()
@@ -164,9 +168,69 @@ class KineticsolWindow(Adw.ApplicationWindow):
         action = self.lookup_action('show-diagnostics')
         if action is not None and action.get_state().get_boolean() != visible:
             action.set_state(GLib.Variant.new_boolean(visible))
+        self._persist_form_changes(apply_runtime=False)
+
+    def _connect_form_change_handlers(self):
+        self.listen_switch.connect('notify::active', self._on_immediate_setting_changed)
+        self.autostart_switch.connect('notify::active', self._on_immediate_setting_changed)
+        self.port_spin.connect('value-changed', self._on_delayed_setting_changed)
+        self.token_entry.connect('activate', self._on_token_entry_committed)
+        self.token_entry.connect('notify::has-focus', self._on_token_focus_changed)
+
+    def _on_immediate_setting_changed(self, *_args):
+        if self._suppress_form_changes:
+            return
+        self._persist_form_changes(apply_runtime=True)
+
+    def _on_delayed_setting_changed(self, *_args):
+        if self._suppress_form_changes:
+            return
+        self._schedule_form_apply()
+
+    def _on_token_entry_committed(self, *_args):
+        if self._suppress_form_changes:
+            return
+        self._persist_form_changes(apply_runtime=True)
+
+    def _on_token_focus_changed(self, entry, _param_spec):
+        if self._suppress_form_changes or entry.has_focus():
+            return
+        self._persist_form_changes(apply_runtime=True)
+
+    def _schedule_form_apply(self):
+        if self._settings_apply_source_id:
+            GLib.source_remove(self._settings_apply_source_id)
+
+        self._settings_apply_source_id = GLib.timeout_add(
+            250,
+            self._flush_scheduled_form_apply,
+        )
+
+    def _flush_scheduled_form_apply(self):
+        self._settings_apply_source_id = 0
+        self._persist_form_changes(apply_runtime=True)
+        return False
+
+    def _persist_form_changes(self, apply_runtime: bool):
+        snapshot = self._settings.save(self._read_form_snapshot())
+        self._normalize_form_from_saved_snapshot(snapshot)
+        if apply_runtime:
+            self._apply_runtime_configuration(snapshot, show_toast=False)
+
+    def _normalize_form_from_saved_snapshot(self, snapshot: SettingsSnapshot):
+        if self.token_entry.get_text() == snapshot.shared_token:
+            return
+
+        self._suppress_form_changes = True
+        self.token_entry.set_text(snapshot.shared_token)
+        self._suppress_form_changes = False
 
     def _apply_runtime_configuration(self, snapshot: SettingsSnapshot, show_toast: bool):
         self._update_endpoint_row(snapshot.listen_port)
+        signature = self._runtime_signature_from_snapshot(snapshot)
+        if signature == self._runtime_signature:
+            return
+
         if snapshot.listen_enabled:
             try:
                 self._listener.start(snapshot.listen_port, snapshot.shared_token)
@@ -175,14 +239,16 @@ class KineticsolWindow(Adw.ApplicationWindow):
                 if show_toast:
                     self._show_toast(_('The listener could not be started.'))
                 return
+            self._runtime_signature = signature
             if show_toast:
-                self._show_toast(_('Configuration saved and listener restarted.'))
+                self._show_toast(_('Configuration updated and listener restarted.'))
             return
 
         self._listener.stop()
+        self._runtime_signature = signature
         self._update_listener_state(_('Listener disabled in configuration.'))
         if show_toast:
-            self._show_toast(_('Configuration saved and listener stopped.'))
+            self._show_toast(_('Configuration updated and listener stopped.'))
 
     def _refresh_power_state(self):
         self._power_capability = self._power_controller.check_capability()
@@ -321,6 +387,13 @@ class KineticsolWindow(Adw.ApplicationWindow):
 
     def _copy_to_clipboard(self, value: str):
         self.get_display().get_clipboard().set(value)
+
+    def _runtime_signature_from_snapshot(self, snapshot: SettingsSnapshot):
+        return (
+            snapshot.listen_enabled,
+            snapshot.listen_port,
+            snapshot.shared_token,
+        )
 
     def _create_toggle_action(self, name: str, callback, initial_state):
         action = Gio.SimpleAction.new_stateful(name, None, initial_state)
