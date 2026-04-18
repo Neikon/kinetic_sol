@@ -32,6 +32,7 @@ kineticsol_sources = [
   'power.py',
   'remote_control.py',
   'settings.py',
+  'tray.py',
   'window.py',
 ]
 

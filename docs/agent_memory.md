@@ -33,7 +33,9 @@
 - La UI Linux debe mostrar explícitamente la `baseUrl` sugerida para Android usando las IPs LAN detectadas localmente, no solo las rutas de la API.
 - La UI Linux tiene que permitir ocultar o mostrar `Diagnostics` desde el menú principal y recordar esa preferencia entre lanzamientos.
 - La configuración de la UI Linux ahora debe guardarse y aplicarse automáticamente, sin botón `Save and apply`.
-- `Enable remote listener` sí controla el servidor HTTP real; con autosave, su efecto debe aplicarse en cuanto cambia el ajuste.
+- El listener remoto ya no es configurable: KineticSOL lo arranca siempre al abrir la app y lo mantiene activo hasta salir.
+- La primera fase de background mode debe ser simple y compatible con Plasma: un ajuste persistente que haga que cerrar la ventana oculte la app en vez de salir, manteniendo vivo el listener, y dejando el cierre total para la acción `Quit`.
+- La segunda fase para Plasma debe añadir una presencia visible al ocultarse: `StatusNotifierItem` por D-Bus, activado solo mientras la app está oculta en background, con permisos Flatpak limitados a `org.kde.StatusNotifierWatcher` y al nombre bien conocido concreto del item.
 - El pipeline de GitHub Actions debe construir el bundle `.flatpak` en cada push a `main`, crear una prerelease automática por cada build de `main` y adjuntar también el bundle a las releases publicadas por tag.
 - Acción remota inicial: apagado del equipo.
 - Vía preferida para apagar: D-Bus a `org.freedesktop.login1`, método `PowerOff(false)`.

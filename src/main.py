@@ -37,7 +37,8 @@ class KineticsolApplication(Adw.Application):
                          flags=Gio.ApplicationFlags.DEFAULT_FLAGS,
                          resource_base_path='/dev/neikon/kinetic_sol')
         self.version = version
-        self.create_action('quit', lambda *_: self.quit(), ['<control>q'])
+        self.create_action('quit', self.on_quit_action, ['<control>q'])
+        self.create_action('show', self.on_show_action)
         self.create_action('about', self.on_about_action)
 
     def do_activate(self):
@@ -46,10 +47,32 @@ class KineticsolApplication(Adw.Application):
         We raise the application's main window, creating it if
         necessary.
         """
+        win = self._ensure_window()
+        win.present()
+        win.on_window_presented()
+
+    def _ensure_window(self):
         win = self.props.active_window
         if not win:
             win = KineticsolWindow(application=self)
+        return win
+
+    def on_show_action(self, *_args):
+        win = self._ensure_window()
         win.present()
+        win.on_window_presented()
+
+    def on_quit_action(self, *_args):
+        win = self.props.active_window
+        if win is not None:
+            win.prepare_for_shutdown()
+        self.quit()
+
+    def do_shutdown(self):
+        win = self.props.active_window
+        if win is not None:
+            win.prepare_for_shutdown()
+        Adw.Application.do_shutdown(self)
 
     def on_about_action(self, *args):
         """Callback for the app.about action."""

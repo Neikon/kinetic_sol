@@ -14,6 +14,7 @@ La app se construirá con GTK4 + libadwaita, se distribuirá como Flatpak y se d
 - Validar autenticación de la orden remota mediante token compartido.
 - Intentar apagar el sistema mediante `org.freedesktop.login1`.
 - Exponer el resultado del intento de apagado y los errores de autorización o conectividad.
+- Arrancar siempre el listener al abrir la app, sin ajuste manual para desactivarlo.
 
 ## No objetivos iniciales
 
@@ -62,10 +63,9 @@ La llamada remota debe usar `PowerOff(false)` para evitar asumir interacción co
 
 Persistencia inicial mediante GSettings:
 
-- `listen-enabled`
 - `listen-port`
 - `shared-token`
-- `start-listener-on-launch`
+- `run-in-background`
 
 Si la plantilla actual no define estas claves todavía, deben añadirse como parte de la base funcional.
 
@@ -78,6 +78,8 @@ Permisos mínimos esperados:
 - `--socket=wayland`
 - `--socket=fallback-x11`
 - `--device=dri`
+- `--talk-name=org.kde.StatusNotifierWatcher` solo para integración opcional de bandeja en Plasma
+- `--own-name=org.kde.StatusNotifierItem.dev.neikon.kinetic_sol` solo para exponer el item propio en Plasma
 
 Permisos explícitamente no deseados por ahora:
 
@@ -110,6 +112,17 @@ La app debe distinguir claramente entre:
 - fallo de acceso D-Bus
 - denegación de polkit
 - capacidad no soportada por el host
+
+## Integración de background en Plasma
+
+- Fase 1:
+  - cerrar la ventana puede ocultar la app en vez de salir
+  - el listener sigue vivo
+  - `Quit` sigue cerrando completamente
+- Fase 2:
+  - cuando la app queda oculta en background, registra un `StatusNotifierItem` para Plasma
+  - el tray icon debe servir al menos para reabrir la ventana
+  - la integración de bandeja no debe ser la base funcional del producto, solo una mejora específica para Plasma
 
 ## Plan de validación
 
