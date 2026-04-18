@@ -78,7 +78,7 @@
                             <child>
                               <object class="AdwActionRow">
                                 <property name="title" translatable="yes">Enable remote listener</property>
-                                <property name="subtitle" translatable="yes">When disabled, KineticSOL will not accept remote commands.</property>
+                                <property name="subtitle" translatable="yes">When disabled, KineticSOL will stop accepting remote commands after Save and apply.</property>
                                 <property name="activatable-widget">listen_switch</property>
                                 <child type="suffix">
                                   <object class="GtkSwitch" id="listen_switch">
@@ -180,7 +180,7 @@
                         </child>
 
                         <child>
-                          <object class="AdwPreferencesGroup">
+                          <object class="AdwPreferencesGroup" id="diagnostics_group">
                             <property name="title" translatable="yes">Diagnostics</property>
                             <property name="description" translatable="yes">These rows expose the current listener state and the current logind capability check.</property>
                             <child>
@@ -222,6 +222,10 @@
   </template>
   <menu id="primary_menu">
     <section>
+      <item>
+        <attribute name="label" translatable="yes">_Show Diagnostics</attribute>
+        <attribute name="action">win.show-diagnostics</attribute>
+      </item>
       <item>
         <attribute name="label" translatable="yes">_About KineticSOL</attribute>
         <attribute name="action">app.about</attribute>

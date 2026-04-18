@@ -21,5 +21,10 @@
 			<summary>Start listener on launch</summary>
 			<description>Whether the listener should start automatically when the app launches.</description>
 		</key>
+		<key name="show-diagnostics" type="b">
+			<default>true</default>
+			<summary>Show diagnostics</summary>
+			<description>Whether the diagnostics group should be visible in the main window.</description>
+		</key>
 	</schema>
 </schemalist>

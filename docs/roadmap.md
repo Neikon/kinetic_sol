@@ -15,6 +15,7 @@
 - [x] Acordar con Android el uso canónico de `/api/v1/...` y el uso de `GET /status` para prueba de conexión.
 - [x] Acordar el plan mínimo de implementación Android para `status`, `poweroff` y mapeo de errores.
 - [x] Mostrar en la UI Linux la `baseUrl` sugerida para configurar Android.
+- [x] Añadir un toggle de menú para mostrar u ocultar `Diagnostics`.
 
 ## En curso
 

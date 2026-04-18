@@ -24,8 +24,7 @@ from secrets import token_urlsafe
 import shlex
 import socket
 
-from gi.repository import Adw
-from gi.repository import Gtk
+from gi.repository import Adw, Gio, GLib, Gtk
 
 from .power import Login1PowerController
 from .remote_control import (
@@ -51,6 +50,7 @@ class KineticsolWindow(Adw.ApplicationWindow):
     copy_base_url_button = Gtk.Template.Child()
     endpoint_row = Gtk.Template.Child()
     copy_curl_button = Gtk.Template.Child()
+    diagnostics_group = Gtk.Template.Child()
     listener_state_row = Gtk.Template.Child()
     power_state_row = Gtk.Template.Child()
     last_request_row = Gtk.Template.Child()
@@ -63,10 +63,16 @@ class KineticsolWindow(Adw.ApplicationWindow):
         self._settings = AppSettings()
         self._power_controller = Login1PowerController()
         self._power_capability = None
+        self._show_diagnostics = True
         self._listener = RemoteCommandServer(
             self._handle_remote_poweroff,
             self._handle_remote_status,
             self._handle_listener_event,
+        )
+        self._create_toggle_action(
+            'show-diagnostics',
+            self._on_show_diagnostics_changed,
+            GLib.Variant.new_boolean(True),
         )
 
         self.save_button.connect('clicked', self._on_save_clicked)
@@ -78,7 +84,9 @@ class KineticsolWindow(Adw.ApplicationWindow):
         self.connect('close-request', self._on_close_request)
 
         snapshot = self._settings.snapshot()
+        self._show_diagnostics = snapshot.show_diagnostics
         self._apply_snapshot_to_form(snapshot)
+        self._set_diagnostics_visible(snapshot.show_diagnostics)
         self._update_endpoint_row(snapshot.listen_port)
         self._update_listener_state(_('Configuration loaded. Apply to restart the listener.'))
         self._update_last_request(_('No remote commands received yet.'))
@@ -99,6 +107,7 @@ class KineticsolWindow(Adw.ApplicationWindow):
         return SettingsSnapshot(
             listen_enabled=self.listen_switch.get_active(),
             start_listener_on_launch=self.autostart_switch.get_active(),
+            show_diagnostics=self._show_diagnostics,
             listen_port=int(self.port_spin.get_value()),
             shared_token=token,
         )
@@ -142,6 +151,19 @@ class KineticsolWindow(Adw.ApplicationWindow):
     def _on_refresh_power_clicked(self, _button):
         self._refresh_power_state()
         self._show_toast(_('Power capability refreshed.'))
+
+    def _on_show_diagnostics_changed(self, action, value):
+        visible = value.get_boolean()
+        self._show_diagnostics = visible
+        action.set_state(value)
+        self._settings.set_show_diagnostics(visible)
+        self._set_diagnostics_visible(visible)
+
+    def _set_diagnostics_visible(self, visible: bool):
+        self.diagnostics_group.set_visible(visible)
+        action = self.lookup_action('show-diagnostics')
+        if action is not None and action.get_state().get_boolean() != visible:
+            action.set_state(GLib.Variant.new_boolean(visible))
 
     def _apply_runtime_configuration(self, snapshot: SettingsSnapshot, show_toast: bool):
         self._update_endpoint_row(snapshot.listen_port)
@@ -299,6 +321,11 @@ class KineticsolWindow(Adw.ApplicationWindow):
 
     def _copy_to_clipboard(self, value: str):
         self.get_display().get_clipboard().set(value)
+
+    def _create_toggle_action(self, name: str, callback, initial_state):
+        action = Gio.SimpleAction.new_stateful(name, None, initial_state)
+        action.connect('change-state', callback)
+        self.add_action(action)
 
     def _handle_remote_poweroff(self, client_host: str):
         result = self._power_controller.power_off()
