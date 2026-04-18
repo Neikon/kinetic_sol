@@ -174,10 +174,14 @@ class KineticsolWindow(Adw.ApplicationWindow):
             primary_url = urls[0]
 
         if len(urls) == 1:
-            return primary_url
+            return _('Use %(url)s. Android and this PC must be on the same local network.') % {
+                'url': primary_url,
+            }
 
         alternates = ', '.join(urls[1:])
-        return _('%(url)s. Other detected addresses: %(others)s') % {
+        return _(
+            'Use %(url)s. Android and this PC must be on the same local network. Other detected addresses: %(others)s'
+        ) % {
             'url': primary_url,
             'others': alternates,
         }
@@ -190,11 +194,12 @@ class KineticsolWindow(Adw.ApplicationWindow):
         return f'http://{addresses[0]}:{port}'
 
     def _get_candidate_ipv4_addresses(self):
-        candidates = []
+        private_candidates = []
+        other_candidates = []
 
         primary_address = self._detect_primary_ipv4_address()
         if primary_address is not None:
-            candidates.append(primary_address)
+            self._append_candidate_ip(primary_address, private_candidates, other_candidates)
 
         hostname = socket.gethostname()
         try:
@@ -207,10 +212,17 @@ class KineticsolWindow(Adw.ApplicationWindow):
                 continue
 
             address = sockaddr[0]
-            if self._is_candidate_lan_ipv4(address) and address not in candidates:
-                candidates.append(address)
+            self._append_candidate_ip(address, private_candidates, other_candidates)
 
-        return candidates
+        return private_candidates + other_candidates
+
+    def _append_candidate_ip(self, address: str, private_candidates, other_candidates):
+        if not self._is_candidate_lan_ipv4(address):
+            return
+
+        target = private_candidates if self._is_private_lan_ipv4(address) else other_candidates
+        if address not in private_candidates and address not in other_candidates:
+            target.append(address)
 
     def _detect_primary_ipv4_address(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -239,6 +251,14 @@ class KineticsolWindow(Adw.ApplicationWindow):
             and not ip.is_link_local
             and not ip.is_unspecified
         )
+
+    def _is_private_lan_ipv4(self, address: str) -> bool:
+        try:
+            ip = ipaddress.ip_address(address)
+        except ValueError:
+            return False
+
+        return isinstance(ip, ipaddress.IPv4Address) and ip.is_private
 
     def _update_listener_state(self, message: str):
         self.listener_state_row.set_subtitle(message)
