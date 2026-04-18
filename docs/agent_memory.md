@@ -38,6 +38,8 @@
 - La segunda fase para Plasma debe añadir una presencia visible al ocultarse: `StatusNotifierItem` por D-Bus, activado solo mientras la app está oculta en background, con permisos Flatpak limitados a `org.kde.StatusNotifierWatcher` y al nombre bien conocido concreto del item.
 - El pipeline de GitHub Actions debe construir el bundle `.flatpak` en cada push a `main`, crear una prerelease automática por cada build de `main` y adjuntar también el bundle a las releases publicadas por tag.
 - La versión en `meson.build` y la release más reciente del `metainfo` deben coincidir; GitHub Releases debe reutilizar esa versión y esas release notes como fuente de verdad.
+- El pipeline debe poder publicar además un repositorio Flatpak estático en GitHub Pages para `main`, junto con un `.flatpakrepo` y una landing de instalación.
+- Mientras no exista firma GPG dedicada para CI, ese repo de GitHub Pages se considera `unsigned` y debe documentarse con instalación usando `--no-gpg-verify`.
 - La lógica de descubrimiento de IP LAN, construcción de `baseUrl` sugerida y generación de `curl` para Android debe vivir fuera de `window.py`, en un módulo dedicado, para mantener la ventana centrada en UI y ciclo de vida.
 - El proyecto debe usar versionado con formato `YY.MM.DD.contador`.
 - Acción remota inicial: apagado del equipo.

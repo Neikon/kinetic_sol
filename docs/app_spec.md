@@ -81,6 +81,16 @@ Permisos mínimos esperados:
 - `--talk-name=org.kde.StatusNotifierWatcher` solo para integración opcional de bandeja en Plasma
 - `--own-name=org.kde.StatusNotifierItem.dev.neikon.kinetic_sol` solo para exponer el item propio en Plasma
 
+## Distribución Flatpak
+
+- El proyecto debe seguir generando bundles `.flatpak` para releases y prereleases.
+- Además, `main` puede publicarse como repositorio Flatpak estático en GitHub Pages.
+- Ese repo debe incluir:
+  - contenido OSTree exportado
+  - `.flatpakrepo`
+  - landing simple con instrucciones de instalación y notas de release
+- Mientras no haya firma GPG estable en CI, la instalación desde GitHub Pages se documenta como `unsigned`.
+
 Permisos explícitamente no deseados por ahora:
 
 - acceso global al system bus

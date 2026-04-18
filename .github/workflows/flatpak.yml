@@ -11,12 +11,19 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  APP_ID: dev.neikon.kinetic_sol
+  APP_NAME: KineticSOL
+  FLATPAK_REMOTE_NAME: kineticsol
   MANIFEST_PATH: dev.neikon.kinetic_sol.json
   BUNDLE_NAME: dev.neikon.kinetic_sol.flatpak
   FLATPAK_BRANCH: main
+  PAGES_ARTIFACT_DIR: flatpak-pages
+  FLATPAKREPO_NAME: kineticsol.flatpakrepo
 
 concurrency:
   group: flatpak-${{ github.ref }}
@@ -39,10 +46,10 @@ jobs:
         shell: bash
         run: |
           python3 <<'PY'
+          import os
           import re
           import xml.etree.ElementTree as ET
           from pathlib import Path
-          import os
 
           meson_text = Path('meson.build').read_text(encoding='utf-8')
           version_match = re.search(r"version:\s*'([^']+)'", meson_text)
@@ -80,6 +87,10 @@ jobs:
           run_number = os.environ['GITHUB_RUN_NUMBER']
           github_sha = os.environ['GITHUB_SHA']
           short_sha = github_sha[:7]
+          repository_owner, repository_name = os.environ['GITHUB_REPOSITORY'].split('/', 1)
+          pages_base_url = f'https://{repository_owner.lower()}.github.io/{repository_name}'
+          pages_repo_url = f'{pages_base_url}/repo/'
+          flatpakrepo_url = f'{pages_base_url}/{os.environ["FLATPAKREPO_NAME"]}'
 
           main_release_tag = f'v{app_version}-main.{run_number}'
           main_release_name = f'KineticSOL {app_version} main build #{run_number}'
@@ -100,6 +111,9 @@ jobs:
               output.write(f'main_release_tag={main_release_tag}\n')
               output.write(f'main_release_name={main_release_name}\n')
               output.write(f'release_name={release_name}\n')
+              output.write(f'pages_base_url={pages_base_url}\n')
+              output.write(f'pages_repo_url={pages_repo_url}\n')
+              output.write(f'flatpakrepo_url={flatpakrepo_url}\n')
               output.write('release_notes<<EOF\n')
               output.write(release_notes)
               output.write('\nEOF\n')
@@ -116,6 +130,41 @@ jobs:
           branch: ${{ env.FLATPAK_BRANCH }}
           cache-key: flatpak-builder-${{ github.ref_name }}-${{ github.sha }}
           upload-artifact: true
+
+      - name: Refresh static repo metadata
+        if: github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          flatpak build-update-repo \
+            --generate-static-deltas \
+            repo
+
+      - name: Prepare GitHub Pages artifact
+        if: github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          RELEASE_NOTES_HTML: ${{ steps.metadata.outputs.release_notes }}
+        run: |
+          rm -rf "${PAGES_ARTIFACT_DIR}"
+          mkdir -p "${PAGES_ARTIFACT_DIR}"
+          cp -R repo "${PAGES_ARTIFACT_DIR}/repo"
+          python3 scripts/prepare_flatpak_pages.py \
+            --output-dir "${PAGES_ARTIFACT_DIR}" \
+            --app-id "${APP_ID}" \
+            --app-name "${APP_NAME}" \
+            --app-version "${{ steps.metadata.outputs.app_version }}" \
+            --release-notes-html "${RELEASE_NOTES_HTML}" \
+            --repo-url "${{ steps.metadata.outputs.pages_repo_url }}" \
+            --homepage-url "https://github.com/${GITHUB_REPOSITORY}" \
+            --remote-name "${FLATPAK_REMOTE_NAME}" \
+            --default-branch "${FLATPAK_BRANCH}" \
+            --flatpakrepo-name "${FLATPAKREPO_NAME}"
+
+      - name: Upload GitHub Pages artifact
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ env.PAGES_ARTIFACT_DIR }}
 
       - name: Create prerelease for main
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -139,3 +188,16 @@ jobs:
           body: ${{ steps.metadata.outputs.release_notes }}
           files: ${{ env.BUNDLE_NAME }}
           fail_on_unmatched_files: true
+
+  deploy-pages:
+    name: Deploy Flatpak Pages
+    if: github.ref == 'refs/heads/main' && github.event_name != 'release'
+    needs: build-flatpak
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
