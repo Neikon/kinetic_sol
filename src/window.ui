@@ -121,7 +121,6 @@
                                     <property name="valign">center</property>
                                     <property name="hexpand">True</property>
                                     <property name="width-chars">28</property>
-                                    <property name="monospace">True</property>
                                   </object>
                                 </child>
                                 <child type="suffix">
