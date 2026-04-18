@@ -19,7 +19,9 @@
 
 from datetime import datetime
 from gettext import gettext as _
+import ipaddress
 from secrets import token_urlsafe
+import socket
 
 from gi.repository import Adw
 from gi.repository import Gtk
@@ -43,6 +45,7 @@ class KineticsolWindow(Adw.ApplicationWindow):
     autostart_switch = Gtk.Template.Child()
     port_spin = Gtk.Template.Child()
     token_entry = Gtk.Template.Child()
+    base_url_row = Gtk.Template.Child()
     endpoint_row = Gtk.Template.Child()
     listener_state_row = Gtk.Template.Child()
     power_state_row = Gtk.Template.Child()
@@ -130,9 +133,78 @@ class KineticsolWindow(Adw.ApplicationWindow):
         self.power_state_row.set_subtitle(self._power_capability.message)
 
     def _update_endpoint_row(self, port: int):
+        self.base_url_row.set_subtitle(self._build_android_base_url_subtitle(port))
         self.endpoint_row.set_subtitle(
             f'GET {STATUS_PATH} and POST {POWER_OFF_PATH} on port {port}. '
             f'Legacy /v1 compatibility is enabled. Bearer token required.'
+        )
+
+    def _build_android_base_url_subtitle(self, port: int) -> str:
+        urls = [f'http://{address}:{port}' for address in self._get_candidate_ipv4_addresses()]
+        if not urls:
+            return _(
+                'No LAN IPv4 address could be detected automatically. Use this PC network address with port %(port)s.'
+            ) % {'port': port}
+
+        primary_url = urls[0]
+        if len(urls) == 1:
+            return _('Use %(url)s as the base URL in Android.') % {'url': primary_url}
+
+        alternates = ', '.join(urls[1:])
+        return _('Use %(url)s as the base URL in Android. Other detected addresses: %(others)s') % {
+            'url': primary_url,
+            'others': alternates,
+        }
+
+    def _get_candidate_ipv4_addresses(self):
+        candidates = []
+
+        primary_address = self._detect_primary_ipv4_address()
+        if primary_address is not None:
+            candidates.append(primary_address)
+
+        hostname = socket.gethostname()
+        try:
+            infos = socket.getaddrinfo(hostname, None, socket.AF_INET, socket.SOCK_STREAM)
+        except OSError:
+            infos = []
+
+        for family, _socktype, _proto, _canonname, sockaddr in infos:
+            if family != socket.AF_INET:
+                continue
+
+            address = sockaddr[0]
+            if self._is_candidate_lan_ipv4(address) and address not in candidates:
+                candidates.append(address)
+
+        return candidates
+
+    def _detect_primary_ipv4_address(self):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            # This does not send traffic, but lets the OS reveal the preferred outbound IP.
+            sock.connect(('8.8.8.8', 80))
+            address = sock.getsockname()[0]
+            if self._is_candidate_lan_ipv4(address):
+                return address
+        except OSError:
+            return None
+        finally:
+            sock.close()
+
+        return None
+
+    def _is_candidate_lan_ipv4(self, address: str) -> bool:
+        try:
+            ip = ipaddress.ip_address(address)
+        except ValueError:
+            return False
+
+        return (
+            isinstance(ip, ipaddress.IPv4Address)
+            and not ip.is_loopback
+            and not ip.is_link_local
+            and not ip.is_unspecified
         )
 
     def _update_listener_state(self, message: str):

@@ -12,7 +12,7 @@
   <template class="KineticsolWindow" parent="AdwApplicationWindow">
     <property name="title" translatable="yes">KineticSOL</property>
     <property name="default-width">760</property>
-    <property name="default-height">680</property>
+    <property name="default-height">820</property>
     <property name="content">
       <object class="AdwToolbarView">
         <child type="top">
@@ -129,6 +129,12 @@
                                     <property name="label" translatable="yes">Rotate</property>
                                   </object>
                                 </child>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="AdwActionRow" id="base_url_row">
+                                <property name="title" translatable="yes">Base URL for Android</property>
+                                <property name="subtitle" translatable="yes">The suggested base URL will appear here.</property>
                               </object>
                             </child>
                             <child>

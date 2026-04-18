@@ -30,6 +30,7 @@
   - usar resultados tipados mínimos en vez de error genérico
   - no introducir fallback a `/v1/...` ni tocar SSH en esta fase
 - Android usará `canPowerOff == "yes"` como señal de “agente listo” y mostrará un aviso cuando el agente responda pero el backend no esté listo.
+- La UI Linux debe mostrar explícitamente la `baseUrl` sugerida para Android usando las IPs LAN detectadas localmente, no solo las rutas de la API.
 - Acción remota inicial: apagado del equipo.
 - Vía preferida para apagar: D-Bus a `org.freedesktop.login1`, método `PowerOff(false)`.
 - Política de privilegios: evitar `sudo` interactivo y evitar abrir más permisos de los estrictamente necesarios en Flatpak.
