@@ -19,13 +19,15 @@
 
 from datetime import datetime
 from gettext import gettext as _
-import ipaddress
 from secrets import token_urlsafe
-import shlex
-import socket
 
 from gi.repository import Adw, Gio, GLib, Gtk
 
+from .networking import (
+    build_android_base_url_subtitle,
+    build_status_curl_command,
+    primary_android_base_url,
+)
 from .power import Login1PowerController
 from .remote_control import (
     LEGACY_POWER_OFF_PATH,
@@ -133,7 +135,7 @@ class KineticsolWindow(Adw.ApplicationWindow):
         self._show_toast(_('Token copied to clipboard.'))
 
     def _on_copy_base_url_clicked(self, _button):
-        base_url = self._get_primary_android_base_url(int(self.port_spin.get_value()))
+        base_url = primary_android_base_url(int(self.port_spin.get_value()))
         if base_url is None:
             self._show_toast(_('No base URL could be detected automatically.'))
             return
@@ -142,7 +144,9 @@ class KineticsolWindow(Adw.ApplicationWindow):
         self._show_toast(_('Base URL copied to clipboard.'))
 
     def _on_copy_curl_clicked(self, _button):
-        curl_command = self._build_status_curl_command(int(self.port_spin.get_value()))
+        port = int(self.port_spin.get_value())
+        base_url = primary_android_base_url(port)
+        curl_command = build_status_curl_command(base_url, self.token_entry.get_text(), STATUS_PATH)
         if curl_command is None:
             self._show_toast(_('A base URL and token are required to build the curl command.'))
             return
@@ -249,125 +253,15 @@ class KineticsolWindow(Adw.ApplicationWindow):
         return False
 
     def _update_endpoint_row(self, port: int):
-        primary_base_url = self._get_primary_android_base_url(port)
-        self.base_url_row.set_subtitle(self._build_android_base_url_subtitle(port, primary_base_url))
+        primary_base_url = primary_android_base_url(port)
+        self.base_url_row.set_subtitle(build_android_base_url_subtitle(port, primary_base_url))
         self.copy_base_url_button.set_sensitive(primary_base_url is not None)
-        self.copy_curl_button.set_sensitive(self._build_status_curl_command(port) is not None)
+        curl_command = build_status_curl_command(primary_base_url, self.token_entry.get_text(), STATUS_PATH)
+        self.copy_curl_button.set_sensitive(curl_command is not None)
         self.endpoint_row.set_subtitle(
             f'GET {STATUS_PATH} and POST {POWER_OFF_PATH} on port {port}. '
             f'Legacy /v1 compatibility is enabled. Bearer token required.'
         )
-
-    def _build_android_base_url_subtitle(self, port: int, primary_url: str | None) -> str:
-        urls = [f'http://{address}:{port}' for address in self._get_candidate_ipv4_addresses()]
-        if not urls:
-            return _(
-                'No LAN IPv4 address could be detected automatically. Use this PC network address with port %(port)s.'
-            ) % {'port': port}
-
-        if primary_url is None:
-            primary_url = urls[0]
-
-        if len(urls) == 1:
-            return _('Use %(url)s. Android and this PC must be on the same local network.') % {
-                'url': primary_url,
-            }
-
-        alternates = ', '.join(urls[1:])
-        return _(
-            'Use %(url)s. Android and this PC must be on the same local network. Other detected addresses: %(others)s'
-        ) % {
-            'url': primary_url,
-            'others': alternates,
-        }
-
-    def _get_primary_android_base_url(self, port: int):
-        addresses = self._get_candidate_ipv4_addresses()
-        if not addresses:
-            return None
-
-        return f'http://{addresses[0]}:{port}'
-
-    def _build_status_curl_command(self, port: int):
-        base_url = self._get_primary_android_base_url(port)
-        token = self.token_entry.get_text().strip()
-        if base_url is None or not token:
-            return None
-
-        url = f'{base_url}{STATUS_PATH}'
-        return (
-            f'curl -i '
-            f'-H {shlex.quote("Accept: application/json")} '
-            f'-H {shlex.quote(f"Authorization: Bearer {token}")} '
-            f'{shlex.quote(url)}'
-        )
-
-    def _get_candidate_ipv4_addresses(self):
-        private_candidates = []
-        other_candidates = []
-
-        primary_address = self._detect_primary_ipv4_address()
-        if primary_address is not None:
-            self._append_candidate_ip(primary_address, private_candidates, other_candidates)
-
-        hostname = socket.gethostname()
-        try:
-            infos = socket.getaddrinfo(hostname, None, socket.AF_INET, socket.SOCK_STREAM)
-        except OSError:
-            infos = []
-
-        for family, _socktype, _proto, _canonname, sockaddr in infos:
-            if family != socket.AF_INET:
-                continue
-
-            address = sockaddr[0]
-            self._append_candidate_ip(address, private_candidates, other_candidates)
-
-        return private_candidates + other_candidates
-
-    def _append_candidate_ip(self, address: str, private_candidates, other_candidates):
-        if not self._is_candidate_lan_ipv4(address):
-            return
-
-        target = private_candidates if self._is_private_lan_ipv4(address) else other_candidates
-        if address not in private_candidates and address not in other_candidates:
-            target.append(address)
-
-    def _detect_primary_ipv4_address(self):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        try:
-            # This does not send traffic, but lets the OS reveal the preferred outbound IP.
-            sock.connect(('8.8.8.8', 80))
-            address = sock.getsockname()[0]
-            if self._is_candidate_lan_ipv4(address):
-                return address
-        except OSError:
-            return None
-        finally:
-            sock.close()
-
-        return None
-
-    def _is_candidate_lan_ipv4(self, address: str) -> bool:
-        try:
-            ip = ipaddress.ip_address(address)
-        except ValueError:
-            return False
-
-        return (
-            isinstance(ip, ipaddress.IPv4Address)
-            and not ip.is_loopback
-            and not ip.is_link_local
-            and not ip.is_unspecified
-        )
-
-    def _is_private_lan_ipv4(self, address: str) -> bool:
-        try:
-            ip = ipaddress.ip_address(address)
-        except ValueError:
-            return False
-
-        return isinstance(ip, ipaddress.IPv4Address) and ip.is_private
 
     def _update_listener_state(self, message: str):
         self.listener_state_row.set_subtitle(message)

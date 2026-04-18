@@ -28,6 +28,10 @@ POWER_OFF_PATH = '/api/v1/poweroff'
 STATUS_PATH = '/api/v1/status'
 LEGACY_POWER_OFF_PATH = '/v1/poweroff'
 LEGACY_STATUS_PATH = '/v1/status'
+POWER_OFF_PATHS = {POWER_OFF_PATH, LEGACY_POWER_OFF_PATH}
+STATUS_PATHS = {STATUS_PATH, LEGACY_STATUS_PATH}
+UNAUTHORIZED_RESPONSE = {'ok': False, 'code': 'unauthorized', 'message': 'Invalid bearer token.'}
+NOT_FOUND_RESPONSE = {'ok': False, 'message': 'Not found.'}
 
 
 class _CommandHTTPServer(ThreadingHTTPServer):
@@ -55,17 +59,13 @@ class _CommandHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         request_path = urlparse(self.path).path
-        if request_path not in {STATUS_PATH, LEGACY_STATUS_PATH}:
-            self._send_json(404, {'ok': False, 'message': 'Not found.'})
+        if request_path not in STATUS_PATHS:
+            self._send_json(404, NOT_FOUND_RESPONSE)
             return
 
         client_host = self.client_address[0]
         if not self._is_authorized():
-            self.server.on_event(
-                'request-rejected',
-                f'Rejected remote status request from {client_host}: invalid token.',
-            )
-            self._send_json(401, {'ok': False, 'code': 'unauthorized', 'message': 'Invalid bearer token.'})
+            self._reject_request(client_host, 'status')
             return
 
         result = self.server.on_status_request(client_host)
@@ -73,17 +73,13 @@ class _CommandHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         request_path = urlparse(self.path).path
-        if request_path not in {POWER_OFF_PATH, LEGACY_POWER_OFF_PATH}:
-            self._send_json(404, {'ok': False, 'message': 'Not found.'})
+        if request_path not in POWER_OFF_PATHS:
+            self._send_json(404, NOT_FOUND_RESPONSE)
             return
 
         client_host = self.client_address[0]
         if not self._is_authorized():
-            self.server.on_event(
-                'request-rejected',
-                f'Rejected remote request from {client_host}: invalid token.',
-            )
-            self._send_json(401, {'ok': False, 'code': 'unauthorized', 'message': 'Invalid bearer token.'})
+            self._reject_request(client_host, 'power-off')
             return
 
         self._discard_request_body()
@@ -114,6 +110,13 @@ class _CommandHandler(BaseHTTPRequestHandler):
 
         if length > 0:
             self.rfile.read(length)
+
+    def _reject_request(self, client_host: str, request_kind: str):
+        self.server.on_event(
+            'request-rejected',
+            f'Rejected remote {request_kind} request from {client_host}: invalid token.',
+        )
+        self._send_json(401, UNAUTHORIZED_RESPONSE)
 
     def _send_json(self, status_code: int, payload):
         body = json.dumps(payload).encode('utf-8')

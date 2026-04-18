@@ -109,11 +109,7 @@ class PlasmaTrayIcon:
             Gio.bus_unown_name(self._owner_id)
             self._owner_id = 0
 
-        if self._connection is not None and self._registration_id:
-            self._connection.unregister_object(self._registration_id)
-            self._registration_id = 0
-
-        self._connection = None
+        self._clear_registration()
         self._status = 'Passive'
         if self._active:
             self._active = False
@@ -151,11 +147,7 @@ class PlasmaTrayIcon:
         self._notify_state(_('Tray icon active in Plasma. Left click reopens the window.'))
 
     def _on_name_lost(self, _connection, _name):
-        if self._connection is not None and self._registration_id:
-            self._connection.unregister_object(self._registration_id)
-            self._registration_id = 0
-
-        self._connection = None
+        self._clear_registration()
         was_active = self._active
         self._active = False
         if self._owner_id:
@@ -223,6 +215,13 @@ class PlasmaTrayIcon:
 
     def _emit_new_tooltip(self):
         self._emit_signal('NewToolTip')
+
+    def _clear_registration(self):
+        if self._connection is not None and self._registration_id:
+            self._connection.unregister_object(self._registration_id)
+            self._registration_id = 0
+
+        self._connection = None
 
     def _notify_state(self, message: str):
         GLib.idle_add(self._on_state_changed, message)

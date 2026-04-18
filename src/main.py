@@ -47,9 +47,7 @@ class KineticsolApplication(Adw.Application):
         We raise the application's main window, creating it if
         necessary.
         """
-        win = self._ensure_window()
-        win.present()
-        win.on_window_presented()
+        self._present_window()
 
     def _ensure_window(self):
         win = self.props.active_window
@@ -57,21 +55,26 @@ class KineticsolApplication(Adw.Application):
             win = KineticsolWindow(application=self)
         return win
 
-    def on_show_action(self, *_args):
+    def _present_window(self):
         win = self._ensure_window()
         win.present()
         win.on_window_presented()
+        return win
 
-    def on_quit_action(self, *_args):
+    def _prepare_shutdown(self):
         win = self.props.active_window
         if win is not None:
             win.prepare_for_shutdown()
+
+    def on_show_action(self, *_args):
+        self._present_window()
+
+    def on_quit_action(self, *_args):
+        self._prepare_shutdown()
         self.quit()
 
     def do_shutdown(self):
-        win = self.props.active_window
-        if win is not None:
-            win.prepare_for_shutdown()
+        self._prepare_shutdown()
         Adw.Application.do_shutdown(self)
 
     def on_about_action(self, *args):
