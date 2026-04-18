@@ -37,6 +37,7 @@
 - La primera fase de background mode debe ser simple y compatible con Plasma: un ajuste persistente que haga que cerrar la ventana oculte la app en vez de salir, manteniendo vivo el listener, y dejando el cierre total para la acción `Quit`.
 - La segunda fase para Plasma debe añadir una presencia visible al ocultarse: `StatusNotifierItem` por D-Bus, activado solo mientras la app está oculta en background, con permisos Flatpak limitados a `org.kde.StatusNotifierWatcher` y al nombre bien conocido concreto del item.
 - El pipeline de GitHub Actions debe construir el bundle `.flatpak` en cada push a `main`, crear una prerelease automática por cada build de `main` y adjuntar también el bundle a las releases publicadas por tag.
+- La lógica de descubrimiento de IP LAN, construcción de `baseUrl` sugerida y generación de `curl` para Android debe vivir fuera de `window.py`, en un módulo dedicado, para mantener la ventana centrada en UI y ciclo de vida.
 - Acción remota inicial: apagado del equipo.
 - Vía preferida para apagar: D-Bus a `org.freedesktop.login1`, método `PowerOff(false)`.
 - Política de privilegios: evitar `sudo` interactivo y evitar abrir más permisos de los estrictamente necesarios en Flatpak.

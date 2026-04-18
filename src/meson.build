@@ -29,6 +29,7 @@ configure_file(
 kineticsol_sources = [
   '__init__.py',
   'main.py',
+  'networking.py',
   'power.py',
   'remote_control.py',
   'settings.py',
