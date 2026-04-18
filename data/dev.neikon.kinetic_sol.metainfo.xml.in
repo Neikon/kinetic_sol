@@ -9,6 +9,7 @@
   <description>
     <p>KineticSOL is a Linux companion app for Kinetic WOL on Android that listens for trusted commands on the local network.</p>
     <p>It provides a GTK4 and libadwaita interface, exposes a local network endpoint and attempts to power off the host through systemd-logind without relying on interactive sudo.</p>
+    <p>It is designed to work together with the Kinetic WOL Android app as its Linux-side companion.</p>
   </description>
 
   <developer id="dev.neikon">
@@ -18,6 +19,7 @@
   <url type="homepage">https://github.com/Neikon/kinetic_sol</url>
   <url type="vcs-browser">https://github.com/Neikon/kinetic_sol</url>
   <url type="bugtracker">https://github.com/Neikon/kinetic_sol/issues</url>
+  <url type="help">https://github.com/Neikon/kinetic_wol.git</url>
 
   <translation type="gettext">kineticsol</translation>
   <launchable type="desktop-id">dev.neikon.kinetic_sol.desktop</launchable>
@@ -29,13 +31,13 @@
   </branding>
 
   <releases>
-    <release version="0.1.0" date="2026-04-18">
+    <release version="1.0.0" date="2026-04-18">
       <url type="details">https://github.com/Neikon/kinetic_sol</url>
       <description translate="no">
-        <p>Initial application skeleton for the Linux-side Kinetic WOL companion.</p>
+        <p>First functional release of the Linux-side Kinetic WOL companion.</p>
         <ul>
-          <li>GTK4/libadwaita foundation packaged for Flatpak.</li>
-          <li>Architecture focused on logind, polkit and immutable distros.</li>
+          <li>Remote listener, token handling and Android companion setup are now usable end to end.</li>
+          <li>The app exposes diagnostics, base URL helpers and quick-copy actions for testing.</li>
         </ul>
       </description>
     </release>

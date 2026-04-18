@@ -57,11 +57,16 @@ class KineticsolApplication(Adw.Application):
                                 application_icon='dev.neikon.kinetic_sol',
                                 developer_name='neikon',
                                 version=self.version,
-                                comments=_('Remote Linux power agent for Kinetic WOL.'),
+                                comments=_('Linux companion app for Kinetic WOL on Android.'),
                                 # Translators: Replace "translator-credits" with your name/username, and optionally an email or URL.
                                 translator_credits = _('translator-credits'),
                                 developers=['neikon'],
                                 copyright='© 2026 neikon')
+        about.set_website('https://github.com/Neikon/kinetic_sol')
+        about.set_issue_url('https://github.com/Neikon/kinetic_sol/issues')
+        about.set_support_url('https://github.com/Neikon/kinetic_wol')
+        about.add_link(_('KineticSOL Repository'), 'https://github.com/Neikon/kinetic_sol')
+        about.add_link(_('Kinetic WOL Android Repository'), 'https://github.com/Neikon/kinetic_wol.git')
         about.present(self.props.active_window)
 
     def create_action(self, name, callback, shortcuts=None):
