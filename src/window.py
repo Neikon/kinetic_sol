@@ -45,7 +45,9 @@ class KineticsolWindow(Adw.ApplicationWindow):
     autostart_switch = Gtk.Template.Child()
     port_spin = Gtk.Template.Child()
     token_entry = Gtk.Template.Child()
+    copy_token_button = Gtk.Template.Child()
     base_url_row = Gtk.Template.Child()
+    copy_base_url_button = Gtk.Template.Child()
     endpoint_row = Gtk.Template.Child()
     listener_state_row = Gtk.Template.Child()
     power_state_row = Gtk.Template.Child()
@@ -67,6 +69,8 @@ class KineticsolWindow(Adw.ApplicationWindow):
 
         self.save_button.connect('clicked', self._on_save_clicked)
         self.rotate_token_button.connect('clicked', self._on_rotate_token_clicked)
+        self.copy_token_button.connect('clicked', self._on_copy_token_clicked)
+        self.copy_base_url_button.connect('clicked', self._on_copy_base_url_clicked)
         self.refresh_power_button.connect('clicked', self._on_refresh_power_clicked)
         self.connect('close-request', self._on_close_request)
 
@@ -105,6 +109,24 @@ class KineticsolWindow(Adw.ApplicationWindow):
         self.token_entry.set_text(token)
         self._show_toast(_('Token rotated. Save to apply it to the listener.'))
 
+    def _on_copy_token_clicked(self, _button):
+        token = self.token_entry.get_text().strip()
+        if not token:
+            self._show_toast(_('There is no token to copy.'))
+            return
+
+        self._copy_to_clipboard(token)
+        self._show_toast(_('Token copied to clipboard.'))
+
+    def _on_copy_base_url_clicked(self, _button):
+        base_url = self._get_primary_android_base_url(int(self.port_spin.get_value()))
+        if base_url is None:
+            self._show_toast(_('No base URL could be detected automatically.'))
+            return
+
+        self._copy_to_clipboard(base_url)
+        self._show_toast(_('Base URL copied to clipboard.'))
+
     def _on_refresh_power_clicked(self, _button):
         self._refresh_power_state()
         self._show_toast(_('Power capability refreshed.'))
@@ -133,28 +155,39 @@ class KineticsolWindow(Adw.ApplicationWindow):
         self.power_state_row.set_subtitle(self._power_capability.message)
 
     def _update_endpoint_row(self, port: int):
-        self.base_url_row.set_subtitle(self._build_android_base_url_subtitle(port))
+        primary_base_url = self._get_primary_android_base_url(port)
+        self.base_url_row.set_subtitle(self._build_android_base_url_subtitle(port, primary_base_url))
+        self.copy_base_url_button.set_sensitive(primary_base_url is not None)
         self.endpoint_row.set_subtitle(
             f'GET {STATUS_PATH} and POST {POWER_OFF_PATH} on port {port}. '
             f'Legacy /v1 compatibility is enabled. Bearer token required.'
         )
 
-    def _build_android_base_url_subtitle(self, port: int) -> str:
+    def _build_android_base_url_subtitle(self, port: int, primary_url: str | None) -> str:
         urls = [f'http://{address}:{port}' for address in self._get_candidate_ipv4_addresses()]
         if not urls:
             return _(
                 'No LAN IPv4 address could be detected automatically. Use this PC network address with port %(port)s.'
             ) % {'port': port}
 
-        primary_url = urls[0]
+        if primary_url is None:
+            primary_url = urls[0]
+
         if len(urls) == 1:
-            return _('Use %(url)s as the base URL in Android.') % {'url': primary_url}
+            return primary_url
 
         alternates = ', '.join(urls[1:])
-        return _('Use %(url)s as the base URL in Android. Other detected addresses: %(others)s') % {
+        return _('%(url)s. Other detected addresses: %(others)s') % {
             'url': primary_url,
             'others': alternates,
         }
+
+    def _get_primary_android_base_url(self, port: int):
+        addresses = self._get_candidate_ipv4_addresses()
+        if not addresses:
+            return None
+
+        return f'http://{addresses[0]}:{port}'
 
     def _get_candidate_ipv4_addresses(self):
         candidates = []
@@ -216,6 +249,9 @@ class KineticsolWindow(Adw.ApplicationWindow):
 
     def _show_toast(self, message: str):
         self.toast_overlay.add_toast(Adw.Toast.new(message))
+
+    def _copy_to_clipboard(self, value: str):
+        self.get_display().get_clipboard().set(value)
 
     def _handle_remote_poweroff(self, client_host: str):
         result = self._power_controller.power_off()
