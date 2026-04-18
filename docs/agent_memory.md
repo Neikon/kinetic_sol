@@ -39,7 +39,8 @@
 - El pipeline de GitHub Actions debe construir el bundle `.flatpak` en cada push a `main`, crear una prerelease automática por cada build de `main` y adjuntar también el bundle a las releases publicadas por tag.
 - La versión en `meson.build` y la release más reciente del `metainfo` deben coincidir; GitHub Releases debe reutilizar esa versión y esas release notes como fuente de verdad.
 - El pipeline debe poder publicar además un repositorio Flatpak estático en GitHub Pages para `main`, junto con un `.flatpakrepo` y una landing de instalación.
-- Mientras no exista firma GPG dedicada para CI, ese repo de GitHub Pages se considera `unsigned` y debe documentarse con instalación usando `--no-gpg-verify`.
+- El pipeline debe firmar el repo OSTree y los bundles Flatpak con una clave GPG dedicada de CI, tomada desde GitHub Secrets.
+- El `.flatpakrepo` publicado en GitHub Pages debe incluir `GPGKey=` con la clave pública base64 para permitir instalación sin `--no-gpg-verify`.
 - La lógica de descubrimiento de IP LAN, construcción de `baseUrl` sugerida y generación de `curl` para Android debe vivir fuera de `window.py`, en un módulo dedicado, para mantener la ventana centrada en UI y ciclo de vida.
 - El proyecto debe usar versionado con formato `YY.MM.DD.contador`.
 - Acción remota inicial: apagado del equipo.

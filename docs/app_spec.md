@@ -89,7 +89,8 @@ Permisos mínimos esperados:
   - contenido OSTree exportado
   - `.flatpakrepo`
   - landing simple con instrucciones de instalación y notas de release
-- Mientras no haya firma GPG estable en CI, la instalación desde GitHub Pages se documenta como `unsigned`.
+- La publicación en GitHub Pages debe ir firmada con una clave GPG dedicada del pipeline.
+- El `.flatpakrepo` publicado debe incluir la clave pública base64 para instalación sin flags especiales.
 
 Permisos explícitamente no deseados por ahora:
 

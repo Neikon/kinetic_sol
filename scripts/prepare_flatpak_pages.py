@@ -160,8 +160,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
         <div class="card">
           <h2>Notas</h2>
           <ul>
-            <li>Este remote es <strong>unsigned</strong> por ahora.</li>
-            <li>Por eso el comando de alta usa <code>--no-gpg-verify</code>.</li>
+            <li>{signature_note}</li>
             <li>Runtimes y dependencias se resuelven desde Flathub.</li>
           </ul>
         </div>
@@ -173,19 +172,27 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
 """
 
 
-def build_flatpakrepo(*, title: str, repo_url: str, homepage: str, default_branch: str) -> str:
-    return "\n".join(
-        [
-            "[Flatpak Repo]",
-            f"Title={title}",
-            f"Url={repo_url}",
-            f"Homepage={homepage}",
-            "Comment=Official Flatpak repository for KineticSOL",
-            "Description=Unsigned GitHub Pages Flatpak repository for KineticSOL.",
-            f"DefaultBranch={default_branch}",
-            "",
-        ]
-    )
+def build_flatpakrepo(
+    *,
+    title: str,
+    repo_url: str,
+    homepage: str,
+    default_branch: str,
+    gpg_key_base64: str | None,
+) -> str:
+    lines = [
+        "[Flatpak Repo]",
+        f"Title={title}",
+        f"Url={repo_url}",
+        f"Homepage={homepage}",
+        "Comment=Official Flatpak repository for KineticSOL",
+        "Description=GitHub Pages Flatpak repository for KineticSOL.",
+        f"DefaultBranch={default_branch}",
+    ]
+    if gpg_key_base64:
+        lines.append(f"GPGKey={gpg_key_base64}")
+    lines.append("")
+    return "\n".join(lines)
 
 
 def parse_args():
@@ -199,6 +206,7 @@ def parse_args():
     parser.add_argument("--homepage-url", required=True)
     parser.add_argument("--remote-name", required=True)
     parser.add_argument("--default-branch", required=True)
+    parser.add_argument("--gpg-key-base64")
     parser.add_argument("--flatpakrepo-name", default="kineticsol.flatpakrepo")
     return parser.parse_args()
 
@@ -213,21 +221,30 @@ def main():
         repo_url=args.repo_url,
         homepage=args.homepage_url,
         default_branch=args.default_branch,
+        gpg_key_base64=args.gpg_key_base64,
     )
     (output_dir / args.flatpakrepo_name).write_text(flatpakrepo_text, encoding="utf-8")
     (output_dir / ".nojekyll").write_text("", encoding="utf-8")
 
     remote_add_command = (
-        f"flatpak remote-add --if-not-exists --no-gpg-verify "
+        f"flatpak remote-add --if-not-exists "
         f"--from {args.remote_name} {args.repo_url.removesuffix('/repo/')}/{args.flatpakrepo_name}"
     )
     install_command = f"flatpak install {args.remote_name} {args.app_id}//{args.default_branch}"
+    signature_note = (
+        "Este remote está <strong>firmado con GPG</strong> y puede añadirse sin banderas"
+        " especiales."
+        if args.gpg_key_base64
+        else "Este remote es <strong>unsigned</strong> por ahora y requiere "
+        "<code>--no-gpg-verify</code>."
+    )
     index_html = INDEX_TEMPLATE.format(
         app_name=html.escape(args.app_name),
         app_version=html.escape(args.app_version),
         remote_add_command=html.escape(remote_add_command),
         install_command=html.escape(install_command),
         release_notes=args.release_notes_html,
+        signature_note=signature_note,
         flatpakrepo_name=html.escape(args.flatpakrepo_name),
     )
     (output_dir / "index.html").write_text(index_html, encoding="utf-8")
