@@ -12,6 +12,12 @@ on:
 permissions:
   contents: write
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  MANIFEST_PATH: dev.neikon.kinetic_sol.json
+  BUNDLE_NAME: dev.neikon.kinetic_sol.flatpak
+  FLATPAK_BRANCH: main
+
 concurrency:
   group: flatpak-${{ github.ref }}
   cancel-in-progress: true
@@ -24,24 +30,64 @@ jobs:
       image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-50
       options: --privileged
 
-    env:
-      MANIFEST_PATH: dev.neikon.kinetic_sol.json
-      BUNDLE_NAME: dev.neikon.kinetic_sol.flatpak
-
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+
+      - name: Collect release metadata
+        id: metadata
+        shell: bash
+        run: |
+          app_version="$(sed -n "s/.*version: '\([^']*\)'.*/\1/p" meson.build | head -n1)"
+
+          if [[ -z "${app_version}" ]]; then
+            echo "Failed to extract app version from meson.build" >&2
+            exit 1
+          fi
+
+          short_sha="${GITHUB_SHA::7}"
+          main_release_tag="v${app_version}-main.${GITHUB_RUN_NUMBER}"
+
+          {
+            echo "app_version=${app_version}"
+            echo "main_release_tag=${main_release_tag}"
+            echo "main_release_name=KineticSOL ${app_version} main build #${GITHUB_RUN_NUMBER}"
+            echo "main_release_body<<EOF"
+            echo "Automated Flatpak bundle built from \`main\`."
+            echo
+            echo "- Version: \`${app_version}\`"
+            echo "- Commit: \`${GITHUB_SHA}\`"
+            echo "- Short SHA: \`${short_sha}\`"
+            echo "- Run: \`${GITHUB_RUN_NUMBER}\`"
+            echo "EOF"
+          } >> "${GITHUB_OUTPUT}"
 
       - name: Build Flatpak bundle
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           manifest-path: ${{ env.MANIFEST_PATH }}
           bundle: ${{ env.BUNDLE_NAME }}
+          branch: ${{ env.FLATPAK_BRANCH }}
           cache-key: flatpak-builder-${{ github.ref_name }}-${{ github.sha }}
           upload-artifact: true
 
-      - name: Upload bundle to GitHub release
+      - name: Create prerelease for main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.metadata.outputs.main_release_tag }}
+          target_commitish: ${{ github.sha }}
+          name: ${{ steps.metadata.outputs.main_release_name }}
+          body: ${{ steps.metadata.outputs.main_release_body }}
+          prerelease: true
+          make_latest: false
+          files: ${{ env.BUNDLE_NAME }}
+          fail_on_unmatched_files: true
+
+      - name: Upload bundle to published GitHub release
         if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.event.release.tag_name }}
           files: ${{ env.BUNDLE_NAME }}
+          fail_on_unmatched_files: true

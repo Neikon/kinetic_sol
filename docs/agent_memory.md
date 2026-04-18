@@ -34,7 +34,7 @@
 - La UI Linux tiene que permitir ocultar o mostrar `Diagnostics` desde el menú principal y recordar esa preferencia entre lanzamientos.
 - La configuración de la UI Linux ahora debe guardarse y aplicarse automáticamente, sin botón `Save and apply`.
 - `Enable remote listener` sí controla el servidor HTTP real; con autosave, su efecto debe aplicarse en cuanto cambia el ajuste.
-- El proyecto necesita un pipeline de GitHub Actions que construya el bundle `.flatpak` en cada push a `main` y lo adjunte a las releases publicadas.
+- El pipeline de GitHub Actions debe construir el bundle `.flatpak` en cada push a `main`, crear una prerelease automática por cada build de `main` y adjuntar también el bundle a las releases publicadas por tag.
 - Acción remota inicial: apagado del equipo.
 - Vía preferida para apagar: D-Bus a `org.freedesktop.login1`, método `PowerOff(false)`.
 - Política de privilegios: evitar `sudo` interactivo y evitar abrir más permisos de los estrictamente necesarios en Flatpak.

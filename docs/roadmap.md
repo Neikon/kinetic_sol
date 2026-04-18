@@ -18,6 +18,7 @@
 - [x] Añadir un toggle de menú para mostrar u ocultar `Diagnostics`.
 - [x] Guardar y aplicar la configuración automáticamente, sin botón manual de guardado.
 - [x] Preparar el proyecto para construir el `.flatpak` desde GitHub Actions.
+- [x] Automatizar prereleases de `main` y adjuntar el bundle `.flatpak` a las releases publicadas.
 
 ## En curso
 
