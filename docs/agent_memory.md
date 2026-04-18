@@ -16,6 +16,13 @@
 - Canal de control remoto inicial: servicio HTTP local en la red del usuario con autenticación por token compartido.
 - Implementación inicial del listener: `ThreadingHTTPServer` de la librería estándar, para evitar dependencias externas y mantener compatibilidad con el runtime Flatpak.
 - Contrato de compatibilidad móvil: rutas canónicas `/api/v1/status` y `/api/v1/poweroff`, con compatibilidad temporal para `/v1/status` y `/v1/poweroff`.
+- Decisión de sincronización con Android: el cliente Android debe migrar a `/api/v1/...` como ruta canónica y no necesita implementar fallback a `/v1/...` mientras Linux mantenga compatibilidad temporal.
+- El endpoint `GET /api/v1/status` debe seguir devolviendo `canPowerOff` y `message`, porque Android quiere usarlo para un flujo de “Probar conexión” y para diferenciar agente accesible de backend realmente listo.
+- Mapeo esperado en Android:
+  - `401`: token inválido
+  - `404`: endpoint o base URL incorrectos
+  - `503`: agente accesible pero apagado no disponible por `login1`/polkit/runtime
+  - timeout: error de conectividad
 - Acción remota inicial: apagado del equipo.
 - Vía preferida para apagar: D-Bus a `org.freedesktop.login1`, método `PowerOff(false)`.
 - Política de privilegios: evitar `sudo` interactivo y evitar abrir más permisos de los estrictamente necesarios en Flatpak.

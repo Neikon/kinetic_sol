@@ -12,6 +12,7 @@
 - [x] Implementar un listener HTTP local autenticado por token.
 - [x] Implementar la integración D-Bus básica con `org.freedesktop.login1`.
 - [x] Cerrar un contrato HTTP inicial compatible con la app Android.
+- [x] Acordar con Android el uso canónico de `/api/v1/...` y el uso de `GET /status` para prueba de conexión.
 
 ## En curso
 

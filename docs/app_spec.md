@@ -130,6 +130,7 @@ La app debe distinguir claramente entre:
 - `GET /api/v1/status`
   - requiere `Authorization: Bearer <token>`
   - responde `200` con JSON de estado
+  - expone `canPowerOff` como valor literal de `CanPowerOff()` y `message` como diagnóstico legible
 - `POST /api/v1/poweroff`
   - requiere `Authorization: Bearer <token>`
   - acepta body vacío o `{}` sin esquema adicional
@@ -138,6 +139,17 @@ La app debe distinguir claramente entre:
 - Compatibilidad temporal:
   - `GET /v1/status`
   - `POST /v1/poweroff`
+
+### Integración Android acordada
+
+- Android debe usar `/api/v1/status` y `/api/v1/poweroff` como rutas canónicas.
+- Linux mantiene `/v1/...` solo como compatibilidad temporal de transición.
+- Android usará `GET /status` para un botón o flujo de “Probar conexión”.
+- El objetivo de `GET /status` no es solo reachability, sino distinguir:
+  - agente accesible y listo
+  - agente accesible pero con `canPowerOff != "yes"`
+  - agente accesible pero mal autenticado
+  - agente inaccesible
 
 ### Validación de entorno real
 
