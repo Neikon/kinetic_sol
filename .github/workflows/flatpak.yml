@@ -11,12 +11,19 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  APP_ID: dev.neikon.kinetic_sol
+  APP_NAME: KineticSOL
+  FLATPAK_REMOTE_NAME: kineticsol
   MANIFEST_PATH: dev.neikon.kinetic_sol.json
   BUNDLE_NAME: dev.neikon.kinetic_sol.flatpak
   FLATPAK_BRANCH: main
+  PAGES_ARTIFACT_DIR: flatpak-pages
+  FLATPAKREPO_NAME: kineticsol.flatpakrepo
 
 concurrency:
   group: flatpak-${{ github.ref }}
@@ -34,15 +41,77 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
+      - name: Import Flatpak signing key
+        id: signing
+        shell: bash
+        env:
+          FLATPAK_GPG_PRIVATE_KEY: ${{ secrets.FLATPAK_GPG_PRIVATE_KEY }}
+          FLATPAK_GPG_PASSPHRASE: ${{ secrets.FLATPAK_GPG_PASSPHRASE }}
+          FLATPAK_GPG_KEY_ID: ${{ secrets.FLATPAK_GPG_KEY_ID }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p "${HOME}/.gnupg"
+          chmod 700 "${HOME}/.gnupg"
+          printf 'allow-preset-passphrase\n' >> "${HOME}/.gnupg/gpg-agent.conf"
+
+          private_key_file="$(mktemp)"
+          trap 'rm -f "${private_key_file}"' EXIT
+          printf '%s' "${FLATPAK_GPG_PRIVATE_KEY}" > "${private_key_file}"
+          gpg --batch --import "${private_key_file}"
+          gpg-connect-agent reloadagent /bye
+
+          keygrip="$(
+            gpg --batch --with-keygrip --list-secret-keys "${FLATPAK_GPG_KEY_ID}" |
+              awk '/Keygrip/ { print $3; exit }'
+          )"
+          if [ -z "${keygrip}" ]; then
+            echo "Failed to extract keygrip for ${FLATPAK_GPG_KEY_ID}" >&2
+            exit 1
+          fi
+
+          preset_passphrase_bin="$(command -v gpg-preset-passphrase || true)"
+          if [ -z "${preset_passphrase_bin}" ]; then
+            for candidate in \
+              /usr/libexec/gpg-preset-passphrase \
+              /usr/lib/gnupg/gpg-preset-passphrase \
+              /usr/lib/gnupg2/gpg-preset-passphrase; do
+              if [ -x "${candidate}" ]; then
+                preset_passphrase_bin="${candidate}"
+                break
+              fi
+            done
+          fi
+
+          if [ -z "${preset_passphrase_bin}" ]; then
+            echo "gpg-preset-passphrase was not found in the container image" >&2
+            exit 1
+          fi
+
+          printf '%s' "${FLATPAK_GPG_PASSPHRASE}" |
+            "${preset_passphrase_bin}" --preset "${keygrip}"
+
+          public_key_base64="$(
+            gpg --batch --export "${FLATPAK_GPG_KEY_ID}" | base64 | tr -d '\n'
+          )"
+          if [ -z "${public_key_base64}" ]; then
+            echo "Failed to export the public signing key" >&2
+            exit 1
+          fi
+
+          {
+            echo "public_key_base64=${public_key_base64}"
+          } >> "${GITHUB_OUTPUT}"
+
       - name: Collect release metadata
         id: metadata
         shell: bash
         run: |
           python3 <<'PY'
+          import os
           import re
           import xml.etree.ElementTree as ET
           from pathlib import Path
-          import os
 
           meson_text = Path('meson.build').read_text(encoding='utf-8')
           version_match = re.search(r"version:\s*'([^']+)'", meson_text)
@@ -80,6 +149,10 @@ jobs:
           run_number = os.environ['GITHUB_RUN_NUMBER']
           github_sha = os.environ['GITHUB_SHA']
           short_sha = github_sha[:7]
+          repository_owner, repository_name = os.environ['GITHUB_REPOSITORY'].split('/', 1)
+          pages_base_url = f'https://{repository_owner.lower()}.github.io/{repository_name}'
+          pages_repo_url = f'{pages_base_url}/repo/'
+          flatpakrepo_url = f'{pages_base_url}/{os.environ["FLATPAKREPO_NAME"]}'
 
           main_release_tag = f'v{app_version}-main.{run_number}'
           main_release_name = f'KineticSOL {app_version} main build #{run_number}'
@@ -100,6 +173,9 @@ jobs:
               output.write(f'main_release_tag={main_release_tag}\n')
               output.write(f'main_release_name={main_release_name}\n')
               output.write(f'release_name={release_name}\n')
+              output.write(f'pages_base_url={pages_base_url}\n')
+              output.write(f'pages_repo_url={pages_repo_url}\n')
+              output.write(f'flatpakrepo_url={flatpakrepo_url}\n')
               output.write('release_notes<<EOF\n')
               output.write(release_notes)
               output.write('\nEOF\n')
@@ -114,8 +190,47 @@ jobs:
           manifest-path: ${{ env.MANIFEST_PATH }}
           bundle: ${{ env.BUNDLE_NAME }}
           branch: ${{ env.FLATPAK_BRANCH }}
+          gpg-sign: ${{ secrets.FLATPAK_GPG_KEY_ID }}
           cache-key: flatpak-builder-${{ github.ref_name }}-${{ github.sha }}
           upload-artifact: true
+
+      - name: Refresh static repo metadata
+        if: github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          flatpak build-update-repo \
+            --gpg-sign="${{ secrets.FLATPAK_GPG_KEY_ID }}" \
+            --generate-static-deltas \
+            repo
+
+      - name: Prepare GitHub Pages artifact
+        if: github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          RELEASE_NOTES_HTML: ${{ steps.metadata.outputs.release_notes }}
+          FLATPAK_GPG_PUBLIC_KEY_BASE64: ${{ steps.signing.outputs.public_key_base64 }}
+        run: |
+          rm -rf "${PAGES_ARTIFACT_DIR}"
+          mkdir -p "${PAGES_ARTIFACT_DIR}"
+          cp -R repo "${PAGES_ARTIFACT_DIR}/repo"
+          python3 scripts/prepare_flatpak_pages.py \
+            --output-dir "${PAGES_ARTIFACT_DIR}" \
+            --app-id "${APP_ID}" \
+            --app-name "${APP_NAME}" \
+            --app-version "${{ steps.metadata.outputs.app_version }}" \
+            --release-notes-html "${RELEASE_NOTES_HTML}" \
+            --repo-url "${{ steps.metadata.outputs.pages_repo_url }}" \
+            --homepage-url "https://github.com/${GITHUB_REPOSITORY}" \
+            --remote-name "${FLATPAK_REMOTE_NAME}" \
+            --default-branch "${FLATPAK_BRANCH}" \
+            --gpg-key-base64 "${FLATPAK_GPG_PUBLIC_KEY_BASE64}" \
+            --flatpakrepo-name "${FLATPAKREPO_NAME}"
+
+      - name: Upload GitHub Pages artifact
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ env.PAGES_ARTIFACT_DIR }}
 
       - name: Create prerelease for main
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -139,3 +254,16 @@ jobs:
           body: ${{ steps.metadata.outputs.release_notes }}
           files: ${{ env.BUNDLE_NAME }}
           fail_on_unmatched_files: true
+
+  deploy-pages:
+    name: Deploy Flatpak Pages
+    if: github.ref == 'refs/heads/main' && github.event_name != 'release'
+    needs: build-flatpak
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

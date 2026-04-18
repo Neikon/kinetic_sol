@@ -54,3 +54,6 @@ flatpak-builder/
 repo/
 app/
 
+# Local signing material
+repo-signing.gpg
+repo-signing-private.asc

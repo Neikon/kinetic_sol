@@ -107,6 +107,23 @@ La app no abre acceso genérico al system bus.
 - `CanPowerOff() == "yes"` mejora la expectativa, pero no garantiza todos los entornos
 - la política final depende del sistema donde se ejecuta la app, no solo del manifest Flatpak
 
+## Repo Flatpak
+
+El proyecto puede publicar un repositorio Flatpak estático en GitHub Pages.
+
+Cuando ese workflow esté activo en `main`, la idea es usar:
+
+```bash
+flatpak remote-add --if-not-exists --from kineticsol https://neikon.github.io/kinetic_sol/kineticsol.flatpakrepo
+flatpak install kineticsol dev.neikon.kinetic_sol//main
+```
+
+Notas:
+
+- el remote publicado en GitHub Pages debe ir firmado con la clave GPG del pipeline
+- el `.flatpakrepo` publicado incluye la clave pública en `GPGKey=`, así que no requiere flags especiales
+- el repo publicado también expone una landing con instrucciones y release notes
+
 ## Desarrollo
 
 Antes de continuar el desarrollo, lee:

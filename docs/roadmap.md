@@ -19,6 +19,8 @@
 - [x] Guardar y aplicar la configuración automáticamente, sin botón manual de guardado.
 - [x] Preparar el proyecto para construir el `.flatpak` desde GitHub Actions.
 - [x] Automatizar prereleases de `main` y adjuntar el bundle `.flatpak` a las releases publicadas.
+- [x] Preparar publicación de un repo Flatpak estático en GitHub Pages para `main`.
+- [x] Preparar firma GPG del repo Flatpak y de los bundles publicados por CI.
 - [x] Añadir la primera fase del modo background sin depender todavía de bandeja de sistema.
 - [x] Añadir la segunda fase de background para Plasma con tray icon visible al ocultar la app.
 - [x] Simplificar el listener para que siempre arranque al abrir la app y ya no tenga toggles de activación.
