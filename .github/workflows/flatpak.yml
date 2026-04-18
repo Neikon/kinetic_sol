@@ -1,0 +1,47 @@
+name: Flatpak
+
+on:
+  push:
+    branches:
+      - main
+  release:
+    types:
+      - published
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: flatpak-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-flatpak:
+    name: Build Flatpak
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-50
+      options: --privileged
+
+    env:
+      MANIFEST_PATH: dev.neikon.kinetic_sol.json
+      BUNDLE_NAME: dev.neikon.kinetic_sol.flatpak
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Flatpak bundle
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          manifest-path: ${{ env.MANIFEST_PATH }}
+          bundle: ${{ env.BUNDLE_NAME }}
+          cache-key: flatpak-builder-${{ github.ref_name }}-${{ github.sha }}
+          upload-artifact: true
+
+      - name: Upload bundle to GitHub release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.BUNDLE_NAME }}
