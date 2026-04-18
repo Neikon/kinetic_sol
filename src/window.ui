@@ -74,31 +74,7 @@
                         <child>
                           <object class="AdwPreferencesGroup">
                             <property name="title" translatable="yes">Remote Listener</property>
-                            <property name="description" translatable="yes">Configure the local HTTP endpoint that the Android app will call.</property>
-                            <child>
-                              <object class="AdwActionRow">
-                                <property name="title" translatable="yes">Enable remote listener</property>
-                                <property name="subtitle" translatable="yes">When disabled, KineticSOL stops accepting remote commands automatically.</property>
-                                <property name="activatable-widget">listen_switch</property>
-                                <child type="suffix">
-                                  <object class="GtkSwitch" id="listen_switch">
-                                    <property name="valign">center</property>
-                                  </object>
-                                </child>
-                              </object>
-                            </child>
-                            <child>
-                              <object class="AdwActionRow">
-                                <property name="title" translatable="yes">Start listener on launch</property>
-                                <property name="subtitle" translatable="yes">If enabled, the listener starts automatically when the app opens.</property>
-                                <property name="activatable-widget">autostart_switch</property>
-                                <child type="suffix">
-                                  <object class="GtkSwitch" id="autostart_switch">
-                                    <property name="valign">center</property>
-                                  </object>
-                                </child>
-                              </object>
-                            </child>
+                            <property name="description" translatable="yes">KineticSOL always starts its local HTTP listener when the app launches and keeps it available until the app exits.</property>
                             <child>
                               <object class="AdwActionRow">
                                 <property name="title" translatable="yes">Run in background</property>

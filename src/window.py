@@ -42,8 +42,6 @@ class KineticsolWindow(Adw.ApplicationWindow):
     __gtype_name__ = 'KineticsolWindow'
 
     toast_overlay = Gtk.Template.Child()
-    listen_switch = Gtk.Template.Child()
-    autostart_switch = Gtk.Template.Child()
     background_switch = Gtk.Template.Child()
     port_spin = Gtk.Template.Child()
     token_entry = Gtk.Template.Child()
@@ -102,20 +100,10 @@ class KineticsolWindow(Adw.ApplicationWindow):
         self._update_last_request(_('No remote commands received yet.'))
         self._update_tray_state(_('Tray integration inactive. It will activate when the app is hidden in background mode.'))
         self._refresh_power_state()
-
-        if snapshot.listen_enabled and snapshot.start_listener_on_launch:
-            self._apply_runtime_configuration(snapshot, show_toast=False)
-        else:
-            self._runtime_signature = self._runtime_signature_from_snapshot(snapshot)
-            if snapshot.listen_enabled:
-                self._update_listener_state(_('Listener is enabled, but it was not started automatically on launch.'))
-            else:
-                self._update_listener_state(_('Listener disabled in configuration.'))
+        self._apply_runtime_configuration(snapshot, show_toast=False)
 
     def _apply_snapshot_to_form(self, snapshot: SettingsSnapshot):
         self._suppress_form_changes = True
-        self.listen_switch.set_active(snapshot.listen_enabled)
-        self.autostart_switch.set_active(snapshot.start_listener_on_launch)
         self.background_switch.set_active(snapshot.run_in_background)
         self.port_spin.set_value(snapshot.listen_port)
         self.token_entry.set_text(snapshot.shared_token)
@@ -123,8 +111,6 @@ class KineticsolWindow(Adw.ApplicationWindow):
 
     def _read_form_snapshot(self) -> SettingsSnapshot:
         return SettingsSnapshot(
-            listen_enabled=self.listen_switch.get_active(),
-            start_listener_on_launch=self.autostart_switch.get_active(),
             run_in_background=self.background_switch.get_active(),
             show_diagnostics=self._show_diagnostics,
             listen_port=int(self.port_spin.get_value()),
@@ -183,8 +169,6 @@ class KineticsolWindow(Adw.ApplicationWindow):
         self._persist_form_changes(apply_runtime=False)
 
     def _connect_form_change_handlers(self):
-        self.listen_switch.connect('notify::active', self._on_immediate_setting_changed)
-        self.autostart_switch.connect('notify::active', self._on_immediate_setting_changed)
         self.background_switch.connect('notify::active', self._on_immediate_setting_changed)
         self.port_spin.connect('value-changed', self._on_delayed_setting_changed)
         self.token_entry.connect('activate', self._on_token_entry_committed)
@@ -244,24 +228,17 @@ class KineticsolWindow(Adw.ApplicationWindow):
         if signature == self._runtime_signature:
             return
 
-        if snapshot.listen_enabled:
-            try:
-                self._listener.start(snapshot.listen_port, snapshot.shared_token)
-            except OSError as error:
-                self._update_listener_state(f'Failed to start listener: {error.strerror or error}.')
-                if show_toast:
-                    self._show_toast(_('The listener could not be started.'))
-                return
-            self._runtime_signature = signature
+        try:
+            self._listener.start(snapshot.listen_port, snapshot.shared_token)
+        except OSError as error:
+            self._update_listener_state(f'Failed to start listener: {error.strerror or error}.')
             if show_toast:
-                self._show_toast(_('Configuration updated and listener restarted.'))
+                self._show_toast(_('The listener could not be started.'))
             return
 
-        self._listener.stop()
         self._runtime_signature = signature
-        self._update_listener_state(_('Listener disabled in configuration.'))
         if show_toast:
-            self._show_toast(_('Configuration updated and listener stopped.'))
+            self._show_toast(_('Configuration updated and listener restarted.'))
 
     def _refresh_power_state(self):
         self._power_capability = self._power_controller.check_capability()
@@ -407,7 +384,6 @@ class KineticsolWindow(Adw.ApplicationWindow):
 
     def _runtime_signature_from_snapshot(self, snapshot: SettingsSnapshot):
         return (
-            snapshot.listen_enabled,
             snapshot.listen_port,
             snapshot.shared_token,
         )
@@ -436,7 +412,7 @@ class KineticsolWindow(Adw.ApplicationWindow):
         return {
             'ok': True,
             'version': self.get_application().version,
-            'listenerEnabled': snapshot.listen_enabled,
+            'listenerEnabled': True,
             'listenerRunning': self._listener.is_running,
             'powerBackend': 'login1',
             'canonicalStatusPath': STATUS_PATH,
@@ -515,7 +491,7 @@ class KineticsolWindow(Adw.ApplicationWindow):
             return False
 
         snapshot = self._read_form_snapshot()
-        return snapshot.run_in_background and snapshot.listen_enabled
+        return snapshot.run_in_background
 
     def _on_close_request(self, *_args):
         if self._should_hide_on_close():

@@ -72,7 +72,7 @@ Autenticación:
 ## Cómo usarlo
 
 1. Abre KineticSOL.
-2. Asegúrate de que `Enable remote listener` está activado.
+2. El listener HTTP arranca automáticamente al iniciar la app.
 3. Revisa la `Base URL for Android`.
 4. Copia el token.
 5. En Kinetic WOL Android, configura:

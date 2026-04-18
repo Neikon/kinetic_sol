@@ -14,6 +14,7 @@ La app se construirá con GTK4 + libadwaita, se distribuirá como Flatpak y se d
 - Validar autenticación de la orden remota mediante token compartido.
 - Intentar apagar el sistema mediante `org.freedesktop.login1`.
 - Exponer el resultado del intento de apagado y los errores de autorización o conectividad.
+- Arrancar siempre el listener al abrir la app, sin ajuste manual para desactivarlo.
 
 ## No objetivos iniciales
 
@@ -62,10 +63,9 @@ La llamada remota debe usar `PowerOff(false)` para evitar asumir interacción co
 
 Persistencia inicial mediante GSettings:
 
-- `listen-enabled`
 - `listen-port`
 - `shared-token`
-- `start-listener-on-launch`
+- `run-in-background`
 
 Si la plantilla actual no define estas claves todavía, deben añadirse como parte de la base funcional.
 
