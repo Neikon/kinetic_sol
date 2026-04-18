@@ -6,7 +6,7 @@ Su objetivo es exponer un agente local en Linux que reciba órdenes desde la app
 
 ## Estado actual
 
-- versión actual: `1.0.0`
+- versión actual: `26.04.19.1`
 - plataforma objetivo: Linux only
 - stack: Python + GTK4 + libadwaita + Meson + Flatpak
 - enfoque: Flatpak-first, compatible con distros modernas e inmutables

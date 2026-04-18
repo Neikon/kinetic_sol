@@ -31,6 +31,17 @@
   </branding>
 
   <releases>
+    <release version="26.04.19.1" date="2026-04-19">
+      <url type="details">https://github.com/Neikon/kinetic_sol</url>
+      <description translate="no">
+        <p>Date-based release aligned with the new <code>YY.MM.DD.counter</code> versioning scheme.</p>
+        <ul>
+          <li>The app now uses an always-on listener model with simpler setup and fewer toggles.</li>
+          <li>Background mode and Plasma tray integration are now available for easier long-running use.</li>
+          <li>The About dialog includes in-app release notes for the current version.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.0.0" date="2026-04-18">
       <url type="details">https://github.com/Neikon/kinetic_sol</url>
       <description translate="no">

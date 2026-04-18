@@ -38,29 +38,75 @@ jobs:
         id: metadata
         shell: bash
         run: |
-          app_version="$(sed -n "s/.*version: '\([^']*\)'.*/\1/p" meson.build | head -n1)"
+          python3 <<'PY'
+          import re
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          import os
 
-          if [[ -z "${app_version}" ]]; then
-            echo "Failed to extract app version from meson.build" >&2
-            exit 1
-          fi
+          meson_text = Path('meson.build').read_text(encoding='utf-8')
+          version_match = re.search(r"version:\s*'([^']+)'", meson_text)
+          if version_match is None:
+              raise SystemExit('Failed to extract app version from meson.build')
 
-          short_sha="${GITHUB_SHA::7}"
-          main_release_tag="v${app_version}-main.${GITHUB_RUN_NUMBER}"
+          app_version = version_match.group(1)
 
-          {
-            echo "app_version=${app_version}"
-            echo "main_release_tag=${main_release_tag}"
-            echo "main_release_name=KineticSOL ${app_version} main build #${GITHUB_RUN_NUMBER}"
-            echo "main_release_body<<EOF"
-            echo "Automated Flatpak bundle built from \`main\`."
-            echo
-            echo "- Version: \`${app_version}\`"
-            echo "- Commit: \`${GITHUB_SHA}\`"
-            echo "- Short SHA: \`${short_sha}\`"
-            echo "- Run: \`${GITHUB_RUN_NUMBER}\`"
-            echo "EOF"
-          } >> "${GITHUB_OUTPUT}"
+          root = ET.parse('data/dev.neikon.kinetic_sol.metainfo.xml.in').getroot()
+          releases = root.find('releases')
+          if releases is None or not list(releases):
+              raise SystemExit('No releases found in metainfo')
+
+          latest_release = list(releases)[0]
+          metainfo_version = latest_release.attrib.get('version', '').strip()
+          if not metainfo_version:
+              raise SystemExit('Latest metainfo release has no version')
+
+          if metainfo_version != app_version:
+              raise SystemExit(
+                  f'Version mismatch: meson.build={app_version} metainfo={metainfo_version}'
+              )
+
+          description = latest_release.find('description')
+          if description is None:
+              raise SystemExit('Latest metainfo release has no description')
+
+          release_notes = ''.join(
+              ET.tostring(child, encoding='unicode', method='xml')
+              for child in description
+          ).strip()
+          if not release_notes:
+              raise SystemExit('Latest metainfo release has empty release notes')
+
+          run_number = os.environ['GITHUB_RUN_NUMBER']
+          github_sha = os.environ['GITHUB_SHA']
+          short_sha = github_sha[:7]
+
+          main_release_tag = f'v{app_version}-main.{run_number}'
+          main_release_name = f'KineticSOL {app_version} main build #{run_number}'
+          release_name = f'KineticSOL {app_version}'
+          main_release_body = (
+              f'{release_notes}\n\n'
+              '---\n'
+              f'Automated Flatpak bundle built from `main`.\n\n'
+              f'- Version: `{app_version}`\n'
+              f'- Commit: `{github_sha}`\n'
+              f'- Short SHA: `{short_sha}`\n'
+              f'- Run: `{run_number}`'
+          )
+
+          output_path = Path(os.environ['GITHUB_OUTPUT'])
+          with output_path.open('a', encoding='utf-8') as output:
+              output.write(f'app_version={app_version}\n')
+              output.write(f'main_release_tag={main_release_tag}\n')
+              output.write(f'main_release_name={main_release_name}\n')
+              output.write(f'release_name={release_name}\n')
+              output.write('release_notes<<EOF\n')
+              output.write(release_notes)
+              output.write('\nEOF\n')
+              output.write('main_release_body<<EOF\n')
+              output.write(main_release_body)
+              output.write('\nEOF\n')
+          PY
 
       - name: Build Flatpak bundle
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
@@ -89,5 +135,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.release.tag_name }}
+          name: ${{ steps.metadata.outputs.release_name }}
+          body: ${{ steps.metadata.outputs.release_notes }}
           files: ${{ env.BUNDLE_NAME }}
           fail_on_unmatched_files: true
