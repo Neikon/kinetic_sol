@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Packaging
+build/
+dist/
+site/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# IDE and local tooling
+.codex/
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Meson / GTK build outputs
+_build/
+builddir/
+meson-logs/
+meson-private/
+.ninja_log
+.ninja_deps
+compile_commands.json
+gschemas.compiled
+*.gresource
+
+# Translations / generated artifacts
+*.mo
+*.pot
+
+# Flatpak / flatpak-builder
+.flatpak-builder/
+flatpak-builder/
+repo/
+app/
+
