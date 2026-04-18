@@ -30,8 +30,16 @@
             "buildsystem" : "meson",
             "sources" : [
                 {
-                    "type" : "git",
-                    "url" : "file:///home/neikon/Projects"
+                    "type" : "dir",
+                    "path" : ".",
+                    "skip" : [
+                        ".git",
+                        ".github",
+                        ".flatpak-builder",
+                        "_build",
+                        "builddir",
+                        "repo"
+                    ]
                 }
             ]
         }
