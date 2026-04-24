@@ -16,6 +16,11 @@
 			<summary>Run in background</summary>
 			<description>Whether closing the window should keep the app alive in the background.</description>
 		</key>
+		<key name="start-hidden" type="b">
+			<default>false</default>
+			<summary>Start hidden in tray</summary>
+			<description>Whether the app should start with its window hidden and tray integration active.</description>
+		</key>
 		<key name="show-diagnostics" type="b">
 			<default>true</default>
 			<summary>Show diagnostics</summary>

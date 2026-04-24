@@ -36,6 +36,7 @@
 - El listener remoto ya no es configurable: KineticSOL lo arranca siempre al abrir la app y lo mantiene activo hasta salir.
 - La primera fase de background mode debe ser simple y compatible con Plasma: un ajuste persistente que haga que cerrar la ventana oculte la app en vez de salir, manteniendo vivo el listener, y dejando el cierre total para la acción `Quit`.
 - La segunda fase para Plasma debe añadir una presencia visible al ocultarse: `StatusNotifierItem` por D-Bus, activado solo mientras la app está oculta en background, con permisos Flatpak limitados a `org.kde.StatusNotifierWatcher` y al nombre bien conocido concreto del item.
+- La app debe permitir arrancar directamente oculta en la bandeja mediante una preferencia persistente. En ese modo se crea la ventana, se inicia el listener y se registra el icono de bandeja sin presentar la UI en el primer arranque; una activación posterior desde el lanzador o la bandeja debe mostrar la ventana.
 - El pipeline de GitHub Actions debe construir el bundle `.flatpak` en cada push a `main`, crear una prerelease automática por cada build de `main` y adjuntar también el bundle a las releases publicadas por tag.
 - La versión en `meson.build` y la release más reciente del `metainfo` deben coincidir; GitHub Releases debe reutilizar esa versión y esas release notes como fuente de verdad.
 - El pipeline debe poder publicar además un repositorio Flatpak estático en GitHub Pages para `main`, junto con un `.flatpakrepo` y una landing de instalación.

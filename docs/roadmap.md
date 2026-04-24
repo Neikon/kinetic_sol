@@ -26,6 +26,7 @@
 - [x] Añadir la segunda fase de background para Plasma con tray icon visible al ocultar la app.
 - [x] Simplificar el listener para que siempre arranque al abrir la app y ya no tenga toggles de activación.
 - [x] Reducir responsabilidades de `window.py` extrayendo utilidades de networking y simplificando lifecycle helpers.
+- [x] Añadir una preferencia persistente para arrancar directamente oculto en la bandeja.
 
 ## En curso
 

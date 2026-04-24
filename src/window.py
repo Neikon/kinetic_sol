@@ -45,6 +45,7 @@ class KineticsolWindow(Adw.ApplicationWindow):
 
     toast_overlay = Gtk.Template.Child()
     background_switch = Gtk.Template.Child()
+    start_hidden_switch = Gtk.Template.Child()
     port_spin = Gtk.Template.Child()
     token_entry = Gtk.Template.Child()
     copy_token_button = Gtk.Template.Child()
@@ -107,6 +108,7 @@ class KineticsolWindow(Adw.ApplicationWindow):
     def _apply_snapshot_to_form(self, snapshot: SettingsSnapshot):
         self._suppress_form_changes = True
         self.background_switch.set_active(snapshot.run_in_background)
+        self.start_hidden_switch.set_active(snapshot.start_hidden)
         self.port_spin.set_value(snapshot.listen_port)
         self.token_entry.set_text(snapshot.shared_token)
         self._suppress_form_changes = False
@@ -114,6 +116,7 @@ class KineticsolWindow(Adw.ApplicationWindow):
     def _read_form_snapshot(self) -> SettingsSnapshot:
         return SettingsSnapshot(
             run_in_background=self.background_switch.get_active(),
+            start_hidden=self.start_hidden_switch.get_active(),
             show_diagnostics=self._show_diagnostics,
             listen_port=int(self.port_spin.get_value()),
             shared_token=self.token_entry.get_text().strip(),
@@ -174,6 +177,7 @@ class KineticsolWindow(Adw.ApplicationWindow):
 
     def _connect_form_change_handlers(self):
         self.background_switch.connect('notify::active', self._on_immediate_setting_changed)
+        self.start_hidden_switch.connect('notify::active', self._on_immediate_setting_changed)
         self.port_spin.connect('value-changed', self._on_delayed_setting_changed)
         self.token_entry.connect('activate', self._on_token_entry_committed)
         self.token_entry.connect('notify::has-focus', self._on_token_focus_changed)
@@ -354,13 +358,17 @@ class KineticsolWindow(Adw.ApplicationWindow):
         self._tray_icon.hide()
         self._listener.stop()
 
-    def _hide_to_background(self):
+    def start_hidden_on_launch(self):
+        self._hide_to_background(show_notification=False)
+
+    def _hide_to_background(self, show_notification: bool = True):
         self.set_visible(False)
         tooltip = _('Listening on port %(port)s for Kinetic WOL commands.') % {
             'port': int(self.port_spin.get_value()),
         }
         self._tray_icon.show(tooltip)
-        self._show_background_notification()
+        if show_notification:
+            self._show_background_notification()
 
     def _show_background_notification(self):
         if self._background_notification_visible:

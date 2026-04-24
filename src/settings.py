@@ -31,6 +31,7 @@ MAX_PORT = 65535
 @dataclass(slots=True)
 class SettingsSnapshot:
     run_in_background: bool
+    start_hidden: bool
     show_diagnostics: bool
     listen_port: int
     shared_token: str
@@ -52,6 +53,7 @@ class AppSettings:
     def snapshot(self) -> SettingsSnapshot:
         return SettingsSnapshot(
             run_in_background=self._settings.get_boolean('run-in-background'),
+            start_hidden=self._settings.get_boolean('start-hidden'),
             show_diagnostics=self._settings.get_boolean('show-diagnostics'),
             listen_port=self._clamp_port(self._settings.get_int('listen-port')),
             shared_token=self.ensure_token(),
@@ -60,11 +62,13 @@ class AppSettings:
     def save(self, snapshot: SettingsSnapshot) -> SettingsSnapshot:
         snapshot = SettingsSnapshot(
             run_in_background=snapshot.run_in_background,
+            start_hidden=snapshot.start_hidden,
             show_diagnostics=snapshot.show_diagnostics,
             listen_port=self._clamp_port(snapshot.listen_port),
             shared_token=snapshot.shared_token.strip() or self.ensure_token(),
         )
         self._settings.set_boolean('run-in-background', snapshot.run_in_background)
+        self._settings.set_boolean('start-hidden', snapshot.start_hidden)
         self._settings.set_boolean('show-diagnostics', snapshot.show_diagnostics)
         self._settings.set_int('listen-port', snapshot.listen_port)
         self._settings.set_string('shared-token', snapshot.shared_token)

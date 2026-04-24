@@ -26,6 +26,7 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 
 from gi.repository import Gtk, Gio, Adw
+from .settings import AppSettings
 from .window import KineticsolWindow
 
 CURRENT_RELEASE_NOTES = """
@@ -46,6 +47,9 @@ class KineticsolApplication(Adw.Application):
                          flags=Gio.ApplicationFlags.DEFAULT_FLAGS,
                          resource_base_path='/dev/neikon/kinetic_sol')
         self.version = version
+        self._settings = AppSettings()
+        self._window = None
+        self._initial_activation_done = False
         self.create_action('quit', self.on_quit_action, ['<control>q'])
         self.create_action('show', self.on_show_action)
         self.create_action('about', self.on_about_action)
@@ -56,13 +60,23 @@ class KineticsolApplication(Adw.Application):
         We raise the application's main window, creating it if
         necessary.
         """
+        if not self._initial_activation_done:
+            self._initial_activation_done = True
+            if self._settings.snapshot().start_hidden:
+                win = self._ensure_window()
+                win.start_hidden_on_launch()
+                return
+
         self._present_window()
 
     def _ensure_window(self):
-        win = self.props.active_window
-        if not win:
-            win = KineticsolWindow(application=self)
-        return win
+        if self._window is None:
+            self._window = KineticsolWindow(application=self)
+            self._window.connect('destroy', self._on_window_destroyed)
+        return self._window
+
+    def _on_window_destroyed(self, *_args):
+        self._window = None
 
     def _present_window(self):
         win = self._ensure_window()
@@ -71,9 +85,8 @@ class KineticsolApplication(Adw.Application):
         return win
 
     def _prepare_shutdown(self):
-        win = self.props.active_window
-        if win is not None:
-            win.prepare_for_shutdown()
+        if self._window is not None:
+            self._window.prepare_for_shutdown()
 
     def on_show_action(self, *_args):
         self._present_window()
@@ -104,7 +117,7 @@ class KineticsolApplication(Adw.Application):
         about.set_release_notes(CURRENT_RELEASE_NOTES)
         about.add_link(_('KineticSOL Repository'), 'https://github.com/Neikon/kinetic_sol')
         about.add_link(_('Kinetic WOL Android Repository'), 'https://github.com/Neikon/kinetic_wol.git')
-        about.present(self.props.active_window)
+        about.present(self._window or self.props.active_window)
 
     def create_action(self, name, callback, shortcuts=None):
         """Add an application action.

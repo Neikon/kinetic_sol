@@ -89,6 +89,18 @@
                             </child>
                             <child>
                               <object class="AdwActionRow">
+                                <property name="title" translatable="yes">Start hidden in tray</property>
+                                <property name="subtitle" translatable="yes">When enabled, KineticSOL starts the listener and opens directly in the system tray without showing the window.</property>
+                                <property name="activatable-widget">start_hidden_switch</property>
+                                <child type="suffix">
+                                  <object class="GtkSwitch" id="start_hidden_switch">
+                                    <property name="valign">center</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="AdwActionRow">
                                 <property name="title" translatable="yes">Listen port</property>
                                 <property name="subtitle" translatable="yes">The HTTP listener binds on all interfaces inside the sandbox.</property>
                                 <child type="suffix">

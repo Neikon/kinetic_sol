@@ -66,6 +66,7 @@ Persistencia inicial mediante GSettings:
 - `listen-port`
 - `shared-token`
 - `run-in-background`
+- `start-hidden`
 
 Si la plantilla actual no define estas claves todavía, deben añadirse como parte de la base funcional.
 
@@ -135,6 +136,11 @@ La app debe distinguir claramente entre:
   - cuando la app queda oculta en background, registra un `StatusNotifierItem` para Plasma
   - el tray icon debe servir al menos para reabrir la ventana
   - la integración de bandeja no debe ser la base funcional del producto, solo una mejora específica para Plasma
+- Preferencia de arranque:
+  - si `start-hidden` está activo, el primer arranque no presenta la ventana
+  - el listener debe arrancar igualmente
+  - la app debe registrarse en la bandeja igual que cuando se oculta en background
+  - una activación posterior desde el lanzador o desde la bandeja debe presentar la ventana
 
 ## Plan de validación
 
