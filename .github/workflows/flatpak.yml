@@ -19,6 +19,7 @@ permissions:
   id-token: write
 
 env:
+  NODE_OPTIONS: --no-deprecation
   APP_ID: dev.neikon.kinetic_sol
   APP_NAME: KineticSOL
   FLATPAK_REMOTE_NAME: kineticsol
