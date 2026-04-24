@@ -19,7 +19,6 @@ permissions:
   id-token: write
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   APP_ID: dev.neikon.kinetic_sol
   APP_NAME: KineticSOL
   FLATPAK_REMOTE_NAME: kineticsol
@@ -211,7 +210,14 @@ jobs:
           branch: ${{ env.FLATPAK_BRANCH }}
           gpg-sign: ${{ steps.signing.outputs.signing_key_id }}
           cache-key: flatpak-builder-${{ github.ref_name }}-${{ github.sha }}
-          upload-artifact: true
+          upload-artifact: false
+
+      - name: Upload Flatpak bundle artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.APP_ID }}-x86_64.flatpak
+          path: ${{ env.BUNDLE_NAME }}
+          if-no-files-found: error
 
       - name: Refresh static repo metadata
         if: github.ref == 'refs/heads/main'
@@ -249,13 +255,14 @@ jobs:
 
       - name: Upload GitHub Pages artifact
         if: github.ref == 'refs/heads/main'
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: ${{ env.PAGES_ARTIFACT_DIR }}
+          include-hidden-files: true
 
       - name: Create prerelease for main
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.metadata.outputs.main_release_tag }}
           target_commitish: ${{ github.sha }}
@@ -268,7 +275,7 @@ jobs:
 
       - name: Upload bundle to published GitHub release
         if: github.event_name == 'release'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.event.release.tag_name }}
           name: ${{ steps.metadata.outputs.release_name }}
@@ -287,4 +294,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
