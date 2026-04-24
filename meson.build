@@ -1,5 +1,5 @@
 project('kineticsol',
-          version: '26.04.19.1',
+          version: '26.04.24.1',
     meson_version: '>= 1.0.0',
   default_options: [ 'warning_level=2', 'werror=false', ],
 )

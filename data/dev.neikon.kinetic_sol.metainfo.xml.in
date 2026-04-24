@@ -31,6 +31,17 @@
   </branding>
 
   <releases>
+    <release version="26.04.24.1" date="2026-04-24">
+      <url type="details">https://github.com/Neikon/kinetic_sol</url>
+      <description translate="no">
+        <p>Startup and background-mode refinements for long-running KineticSOL sessions.</p>
+        <ul>
+          <li>A new preference can start KineticSOL directly hidden in the system tray while the listener starts normally.</li>
+          <li>Reopening the app from the launcher or tray now reuses the existing window and listener state.</li>
+          <li>The startup mode is stored in GSettings alongside the existing background and remote-access preferences.</li>
+        </ul>
+      </description>
+    </release>
     <release version="26.04.19.1" date="2026-04-19">
       <url type="details">https://github.com/Neikon/kinetic_sol</url>
       <description translate="no">

@@ -30,11 +30,11 @@ from .settings import AppSettings
 from .window import KineticsolWindow
 
 CURRENT_RELEASE_NOTES = """
-<p>Date-based release aligned with the new <code>YY.MM.DD.counter</code> versioning scheme.</p>
+<p>Startup and background-mode refinements for long-running KineticSOL sessions.</p>
 <ul>
-  <li>The app now uses an always-on listener model with simpler setup and fewer toggles.</li>
-  <li>Background mode and Plasma tray integration are now available for easier long-running use.</li>
-  <li>The About dialog includes in-app release notes for the current version.</li>
+  <li>A new preference can start KineticSOL directly hidden in the system tray while the listener starts normally.</li>
+  <li>Reopening the app from the launcher or tray now reuses the existing window and listener state.</li>
+  <li>The startup mode is stored in GSettings alongside the existing background and remote-access preferences.</li>
 </ul>
 """.strip()
 
