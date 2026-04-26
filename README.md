@@ -4,6 +4,15 @@ KineticSOL es la app Linux companion de [Kinetic WOL](https://github.com/Neikon/
 
 Su objetivo es exponer un agente local en Linux que reciba órdenes desde la app móvil y ejecute acciones del sistema. La primera acción soportada es apagar el equipo usando `systemd-logind` por D-Bus, sin depender de `sudo` interactivo.
 
+Con KineticSOL instalado en cada equipo Linux que quieras controlar, Kinetic WOL puede usarse no solo para despertar dispositivos compatibles con Wake-on-LAN, sino también para enviarles una orden de apagado remoto cuando el agente esté en ejecución.
+
+## Descarga rápida
+
+- Releases y bundles publicados:
+  - <https://github.com/Neikon/kinetic_sol/releases>
+- Instalación directa desde GitHub Pages:
+  - <https://neikon.github.io/kinetic_sol/>
+
 ## Estado actual
 
 - versión actual: `26.04.24.1`
@@ -27,7 +36,7 @@ Y luego usa el agente Linux para:
 
 - probar conexión
 - validar si el backend de apagado está disponible
-- enviar la orden de apagado remoto
+- enviar la orden de apagado remoto al dispositivo Linux donde KineticSOL está ejecutándose
 
 ## Qué hace la app
 
@@ -39,8 +48,13 @@ Y luego usa el agente Linux para:
   - `baseUrl`
   - `curl` de prueba para `GET /api/v1/status`
 - consulta `org.freedesktop.login1`
-- intenta apagar el sistema con `PowerOff(false)`
+- intenta apagar el dispositivo Linux local con `PowerOff(false)` cuando Android envía la orden remota
 - muestra diagnóstico básico del listener y del backend de energía
+
+## Qué todavía no hace
+
+- el control por voz todavía está pendiente de implementar
+- KineticSOL no despierta dispositivos por sí misma; el despertar sigue siendo responsabilidad de Kinetic WOL en Android
 
 ## API actual
 
